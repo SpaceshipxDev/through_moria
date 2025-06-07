@@ -1,24 +1,17 @@
-import os
+import openpyxl
 from openpyxl import Workbook
 from openpyxl.drawing.image import Image as OpenpyxlImage
+import os
 
-# Define the directory clearly containing your images
 images_dir = "extracted_images"
-
-# Output Excel file name clearly defined
 output_excel = "output.xlsx"
 
-# Create Workbook and worksheet
 wb = Workbook()
 ws = wb.active
 ws.title = "Components Log"
 
-# Define the column headers clearly:
 headers = ["Component ID", "Description", "Material", "Image"]
 ws.append(headers)
-
-# Simulate some fake data (just for this quick embedding test clearly):
-# later the real textual information will come directly from your LLM structured output
 
 data_for_testing = [
     {"id": "CMP001", "desc": "Component 1", "material": "Steel", "image_filename": "image_row_3.png"},
@@ -26,33 +19,32 @@ data_for_testing = [
     {"id": "CMP003", "desc": "Component 3", "material": "Titanium", "image_filename": "image_row_5.png"},
 ]
 
-# Start clearly embedding:
-row_num = 2  # Start clearly at row 2 (row 1 clearly header row)
-
-for item in data_for_testing:
+for row_num, item in enumerate(data_for_testing, start=2):
     ws.cell(row=row_num, column=1, value=item["id"])
     ws.cell(row=row_num, column=2, value=item["desc"])
     ws.cell(row=row_num, column=3, value=item["material"])
 
-    # Construct path clearly and embed image into Excel
     image_path = os.path.join(images_dir, item["image_filename"])
-
     if os.path.exists(image_path):
         img = OpenpyxlImage(image_path)
 
-        # Optional: clearly resize images to fit Excel cells nicely if they are too big:
-        img.width = 100  # Optional clearly defined width
-        img.height = 100  # Optional clearly defined height
+        # --- DYNAMIC RESIZING SECTION ---
+        # Convert pixels to Excel's row height and column width units
+        # (Excel: 1 row height unit ≈ 0.75 points ≈ 1.33 px; 1 col width ≈ px/7)
+        px_height = img.height
+        px_width = img.width
 
-        # Clearly indicate the cell location (column D, current row)
+        # Convert for Excel: (rounded for Excel's weird units)
+        row_height = int(px_height * 0.75)    # Excel's row height is about 0.75 points per pixel
+        col_width = round(px_width / 7.0, 2)  # Excel's col width is about px/7
+
+        ws.row_dimensions[row_num].height = row_height
+        ws.column_dimensions['D'].width = max(ws.column_dimensions['D'].width or 0, col_width)
+
         img_anchor = f'D{row_num}'
         ws.add_image(img, img_anchor)
     else:
-        print(f"Image file not found clearly: {image_path}")
+        print(f"Image file not found: {image_path}")
 
-    row_num += 1
-
-# Clearly save workbook into your output file
 wb.save(output_excel)
-
-print("✅ Excel file with embedded images generated successfully!")
+print("✅ Universal tidy Excel generated.")
