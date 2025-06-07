@@ -14,8 +14,10 @@ def extract_customer_excel(file_path, images_output_dir):
     # 2. Build actual headers, fallback if missing
     headers = []
     for idx, cell in enumerate(ws[1]):
-        header = cell.value if cell.value else (fallback_headers[idx] if idx < len(fallback_headers) else f"Column_{idx+1}")
-        headers.append(header)
+        if cell.value is not None:
+            headers.append(cell.value)
+        else:
+            headers.append(f"Unnamed_Column_{idx+1}")
 
     os.makedirs(images_output_dir, exist_ok=True)
 
