@@ -33,16 +33,17 @@ def extract_customer_excel(file_path, images_output_dir):
 
         # Clearly checking if image exists for this row
         image_filename = None
+        
         if row_idx in images_by_row:
             openpyxl_img: OpenpyxlImage = images_by_row[row_idx]
-
-            # Save image clearly defined
             image_filename = f"image_row_{row_idx}.png"
             image_path = os.path.join(images_output_dir, image_filename)
-
-            # Image saving handled clearly here
-            openpyxl_img_ref: PILImage.Image = openpyxl_img._data()
-            openpyxl_img_ref.save(image_path)
+            
+            # Fixed: Convert bytes to PIL image and save
+            from io import BytesIO
+            img_bytes = openpyxl_img._data()
+            img_pil = PILImage.open(BytesIO(img_bytes))
+            img_pil.save(image_path)
         
         # Clearly add the image_file data key
         row_data['image_file'] = image_filename
