@@ -9,7 +9,6 @@ def extract_customer_excel(file_path, images_output_dir):
     ws = wb.active
 
     # 1. Known schema (modify as needed)
-    fallback_headers = ["序号", "图号", "图片", "名称", "材质", "数量", "表面处理", "备注"]
 
     # 2. Build actual headers, fallback if missing
     headers = []
