@@ -21,9 +21,9 @@ ws.append(headers)
 # later the real textual information will come directly from your LLM structured output
 
 data_for_testing = [
-    {"id": "CMP001", "desc": "Component 1", "material": "Steel", "image_filename": "component1.png"},
-    {"id": "CMP002", "desc": "Component 2", "material": "Aluminum", "image_filename": "component2.png"},
-    {"id": "CMP003", "desc": "Component 3", "material": "Titanium", "image_filename": "component3.png"},
+    {"id": "CMP001", "desc": "Component 1", "material": "Steel", "image_filename": "image_row_3.png"},
+    {"id": "CMP002", "desc": "Component 2", "material": "Aluminum", "image_filename": "image_row_4.png"},
+    {"id": "CMP003", "desc": "Component 3", "material": "Titanium", "image_filename": "image_row_5.png"},
 ]
 
 # Start clearly embedding:
