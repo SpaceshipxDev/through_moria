@@ -204,7 +204,7 @@ def calculate_image_row_score(img_from_row, img_to_row, data_row):
     return max(0, total_score)
 
 if __name__ == "__main__":
-    file_path = "data/20250528-探野T4-3D打印手板加工清单.xlsx"
+    file_path = "data/机加金属加工要求.xlsx"
     images_dir = "extracted_images"
 
     data_list = extract_customer_excel(file_path, images_dir)
