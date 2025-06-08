@@ -15,8 +15,8 @@ your_step1_data = [
         "材质": "6061AL",
         "工艺": "机加",
         "外观处理": "120#喷砂+黑色氧化",
-        "备注": null,
-        "image_file": null
+        "备注": "null",
+        "image_file": "null"
     },
     {
         "序号": 2,
@@ -26,7 +26,7 @@ your_step1_data = [
         "工艺": "机加",
         "外观处理": "120#喷砂+黑色氧化",
         "备注": "局部镭雕去氧化面",
-        "image_file": null
+        "image_file": "null"
     },
     {
         "序号": 3,
@@ -36,7 +36,7 @@ your_step1_data = [
         "工艺": "机加",
         "外观处理": "120#喷砂+黑色氧化",
         "备注": "局部镭雕去氧化面",
-        "image_file": null
+        "image_file": "null"
     },
     {
         "序号": 4,
@@ -46,7 +46,7 @@ your_step1_data = [
         "工艺": "机加",
         "外观处理": "120#喷砂+黑色氧化",
         "备注": "局部镭雕去氧化面",
-        "image_file": null
+        "image_file": "null"
     },
     {
         "序号": 5,
@@ -56,7 +56,7 @@ your_step1_data = [
         "工艺": "机加",
         "外观处理": "120#喷砂+黑色氧化",
         "备注": "局部镭雕去氧化面",
-        "image_file": null
+        "image_file": "null"
     },
     {
         "序号": 6,
@@ -66,7 +66,7 @@ your_step1_data = [
         "工艺": "机加",
         "外观处理": "120#喷砂+黑色氧化",
         "备注": "局部镭雕去氧化面",
-        "image_file": null
+        "image_file": "null"
     }
 ]
 
@@ -81,7 +81,7 @@ Internal format clearly required:
 - Material:
 - Machining_Process:
 - Surface_Finish:
-- Notes:
+- Notes: (or N/A if none)
 - image_file: (exact file name or null if not present clearly DO NOT modify filenames)
 
 Instructions clearly to follow:
