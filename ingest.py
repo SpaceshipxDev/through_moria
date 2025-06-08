@@ -109,10 +109,14 @@ def extract_customer_excel(file_path, images_output_dir):
     structured_data = []
     for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
         row_data = {}
+        
+    for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
+        row_data = {}
         for col_idx, cell in enumerate(row):
             if col_idx < len(headers):
                 column_name = headers[col_idx]
-                row_data[column_name] = cell.value
+                # Patch: Nulls become "null"
+                row_data[column_name] = cell.value if cell.value is not None else "null"
 
         image_filename = None
         if row_idx in images_by_row:
@@ -123,7 +127,8 @@ def extract_customer_excel(file_path, images_output_dir):
             img_pil = PILImage.open(BytesIO(img_bytes))
             img_pil.save(image_path)
 
-        row_data['image_file'] = image_filename
+        # Patch: Nulls become "null"
+        row_data['image_file'] = image_filename if image_filename is not None else "null"
         structured_data.append(row_data)
 
     # Final debug info
