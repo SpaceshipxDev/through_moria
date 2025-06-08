@@ -21,142 +21,111 @@ def extract_customer_excel(file_path, images_output_dir):
     # Get worksheet dimensions
     max_data_row = ws.max_row
     
-    # More precise image mapping using cell dimensions
-    images_by_row = {}
+    print("=== IMPROVED IMAGE MAPPING ===")
     
-    # Get row heights to better understand positioning
-    row_heights = {}
-    for row_num in range(1, max_data_row + 1):
-        row_heights[row_num] = ws.row_dimensions[row_num].height or 15  # Default Excel row height
+    # First pass: calculate all image positions and scores for each row
+    image_candidates = {}  # {image_index: [(row, score), ...]}
     
-    print("=== IMAGE MAPPING DEBUG ===")
     for i, img in enumerate(ws._images):
-        # Get precise anchor position
         anchor = img.anchor
-        from_row = anchor._from.row  # 0-based
-        from_col = anchor._from.col  # 0-based
+        from_row = anchor._from.row + 1  # Convert to 1-based
+        from_col = anchor._from.col + 1
         
-        # Get the "to" position (bottom-right of image)
-        to_row = anchor.to.row if hasattr(anchor, 'to') and anchor.to else from_row
-        to_col = anchor.to.col if hasattr(anchor, 'to') and anchor.to else from_col
-        
-        # Convert to 1-based Excel row numbers
-        from_row_1based = from_row + 1
-        to_row_1based = to_row + 1
-        
-        print(f"Image {i}: from_row={from_row_1based}, to_row={to_row_1based}, from_col={from_col}, to_col={to_col}")
-        
-        # Find which data row this image most likely belongs to
-        # Strategy: prioritize by image center and size
-        image_height = max(to_row_1based - from_row_1based, 1)
-        image_center = (from_row_1based + to_row_1based) / 2
-        
-        best_row = None
-        best_score = -1
-        
-        for data_row in range(2, max_data_row + 1):  # Data starts from row 2
-            # Calculate overlap between image and this data row
-            image_start = from_row_1based
-            image_end = max(to_row_1based, from_row_1based + 1)  # At least 1 row high
-            
-            row_start = data_row
-            row_end = data_row + 1
-            
-            # Calculate overlap
-            overlap_start = max(image_start, row_start)
-            overlap_end = min(image_end, row_end)
-            overlap = max(0, overlap_end - overlap_start)
-            
-            # Score based on multiple factors:
-            # 1. Overlap amount (most important)
-            # 2. Distance from image center to row center
-            # 3. Bonus if image anchor is in this row
-            
-            if overlap > 0:
-                center_distance = abs(image_center - (data_row + 0.5))
-                anchor_bonus = 2 if from_row_1based == data_row else 0
-                
-                # Higher score is better
-                score = overlap * 10 - center_distance + anchor_bonus
-                
-                if score > best_score:
-                    best_score = score
-                    best_row = data_row
-        
-        # Alternative: if no good overlap, use proximity to anchor
-        if best_score <= 0:
-            min_distance = float('inf')
-            for data_row in range(2, max_data_row + 1):
-                distance = abs(from_row_1based - data_row)
-                if distance < min_distance:
-                    min_distance = distance
-                    best_row = data_row
-            best_score = -min_distance  # Negative score for fallback cases
-        
-        print(f"Image {i}: height={image_height}, center={image_center:.1f}, score={best_score:.1f}")
-        
-        if best_row:
-            # Check if this row already has an image assigned
-            if best_row not in images_by_row:
-                images_by_row[best_row] = img
-                print(f"  -> Mapped to data row {best_row}")
-            else:
-                # Conflict resolution: compare scores
-                print(f"  -> Conflict with row {best_row}!")
-                
-                # Find the current image in this row and compare
-                current_img = images_by_row[best_row]
-                current_img_idx = list(ws._images).index(current_img)
-                
-                # Calculate score for current image
-                curr_anchor = current_img.anchor
-                curr_from_row = curr_anchor._from.row + 1
-                curr_to_row = (curr_anchor.to.row + 1) if hasattr(curr_anchor, 'to') and curr_anchor.to else curr_from_row
-                curr_center = (curr_from_row + curr_to_row) / 2
-                curr_center_distance = abs(curr_center - (best_row + 0.5))
-                curr_anchor_bonus = 2 if curr_from_row == best_row else 0
-                
-                # Calculate overlap for current image
-                curr_overlap_start = max(curr_from_row, best_row)
-                curr_overlap_end = min(max(curr_to_row, curr_from_row + 1), best_row + 1)
-                curr_overlap = max(0, curr_overlap_end - curr_overlap_start)
-                
-                curr_score = curr_overlap * 10 - curr_center_distance + curr_anchor_bonus
-                
-                print(f"    Current image {current_img_idx} score: {curr_score:.1f}")
-                print(f"    New image {i} score: {best_score:.1f}")
-                
-                if best_score > curr_score:
-                    # New image wins, reassign current image
-                    print(f"    New image wins! Reassigning current image...")
-                    
-                    # Find alternative row for current image
-                    for alt_row in range(2, max_data_row + 1):
-                        if alt_row not in images_by_row or alt_row == best_row:
-                            if alt_row != best_row:  # Don't reassign to same row
-                                images_by_row[alt_row] = current_img
-                                print(f"    Moved current image to row {alt_row}")
-                                break
-                    
-                    # Assign new image to contested row
-                    images_by_row[best_row] = img
-                    print(f"  -> Assigned new image to row {best_row}")
-                else:
-                    # Current image stays, find alternative for new image
-                    print(f"    Current image stays, finding alternative...")
-                    for alt_row in range(2, max_data_row + 1):
-                        if alt_row not in images_by_row:
-                            images_by_row[alt_row] = img
-                            print(f"  -> Assigned to alternative row {alt_row}")
-                            break
-                    else:
-                        print(f"  -> No alternative row found, image not mapped")
+        # Handle different anchor types
+        if hasattr(anchor, 'to') and anchor.to:
+            to_row = anchor.to.row + 1
+            to_col = anchor.to.col + 1
         else:
-            print(f"  -> No suitable row found")
-
-    print(f"\n=== FINAL MAPPING ===")
-    for row, img in images_by_row.items():
-        print(f"Row {row} -> Image")
+            # Use image size to estimate end position
+            to_row = from_row + 2  # Assume 2 rows high by default
+            to_col = from_col + 1
+        
+        print(f"Image {i}: from=({from_row},{from_col}) to=({to_row},{to_col})")
+        
+        # Calculate scores for all possible data rows
+        candidates = []
+        for data_row in range(2, max_data_row + 1):
+            score = calculate_image_row_score(from_row, to_row, data_row)
+            if score > 0:  # Only consider positive scores
+                candidates.append((data_row, score))
+        
+        # Sort by score (highest first)
+        candidates.sort(key=lambda x: x[1], reverse=True)
+        image_candidates[i] = candidates
+        
+        print(f"  Top candidates: {candidates[:3]}")
+    
+    # Second pass: use Hungarian-like assignment to avoid conflicts
+    images_by_row = {}
+    assigned_images = set()
+    
+    # Start with images that have fewer good options (more constrained)
+    image_constraint_order = sorted(
+        image_candidates.keys(), 
+        key=lambda i: len([c for c in image_candidates[i] if c[1] > 5])
+    )
+    
+    for img_idx in image_constraint_order:
+        if img_idx in assigned_images:
+            continue
+            
+        candidates = image_candidates[img_idx]
+        
+        # Find best unassigned row
+        for row, score in candidates:
+            if row not in images_by_row:
+                images_by_row[row] = ws._images[img_idx]
+                assigned_images.add(img_idx)
+                print(f"Assigned image {img_idx} to row {row} (score: {score:.1f})")
+                break
+        else:
+            # No unassigned row found, handle conflict
+            if candidates:
+                best_row, best_score = candidates[0]
+                if best_row in images_by_row:
+                    # Check if we should replace the existing assignment
+                    current_img_idx = list(ws._images).index(images_by_row[best_row])
+                    current_candidates = image_candidates.get(current_img_idx, [])
+                    current_score = next((s for r, s in current_candidates if r == best_row), 0)
+                    
+                    print(f"Conflict at row {best_row}: img {img_idx} (score {best_score:.1f}) vs img {current_img_idx} (score {current_score:.1f})")
+                    
+                    if best_score > current_score * 1.2:  # 20% better to replace
+                        # Try to relocate the current image
+                        relocated = False
+                        for alt_row, alt_score in current_candidates:
+                            if alt_row not in images_by_row and alt_score > current_score * 0.7:  # Accept 30% score drop
+                                images_by_row[alt_row] = images_by_row[best_row]
+                                print(f"  Relocated img {current_img_idx} to row {alt_row} (score: {alt_score:.1f})")
+                                relocated = True
+                                break
+                        
+                        if relocated or len(current_candidates) <= 1:  # Replace if relocated or current has no alternatives
+                            images_by_row[best_row] = ws._images[img_idx]
+                            assigned_images.add(img_idx)
+                            print(f"  Replaced with img {img_idx}")
+    
+    # Third pass: handle any remaining unassigned images
+    unassigned_images = set(range(len(ws._images))) - assigned_images
+    unassigned_rows = set(range(2, max_data_row + 1)) - set(images_by_row.keys())
+    
+    if unassigned_images and unassigned_rows:
+        print(f"\nAssigning remaining {len(unassigned_images)} images to {len(unassigned_rows)} rows")
+        
+        # Simple proximity-based assignment for remainders
+        for img_idx in unassigned_images:
+            if not unassigned_rows:
+                break
+                
+            img = ws._images[img_idx]
+            anchor = img.anchor
+            from_row = anchor._from.row + 1
+            
+            # Find closest unassigned row
+            closest_row = min(unassigned_rows, key=lambda r: abs(r - from_row))
+            images_by_row[closest_row] = img
+            unassigned_rows.remove(closest_row)
+            print(f"Proximity assignment: img {img_idx} -> row {closest_row}")
 
     # Build the structured data
     structured_data = []
@@ -179,17 +148,58 @@ def extract_customer_excel(file_path, images_output_dir):
         row_data['image_file'] = image_filename
         structured_data.append(row_data)
 
-    # Final debug info
-    print(f"\n=== SUMMARY ===")
+    # Summary
+    print(f"\n=== FINAL SUMMARY ===")
     print(f"Total images: {len(ws._images)}")
     print(f"Total data rows: {len(structured_data)}")
-    print(f"Images mapped: {len(images_by_row)}")
-    
-    rows_without_images = [i for i, row_data in enumerate(structured_data, start=2) if row_data.get('image_file') is None]
-    if rows_without_images:
-        print(f"Rows without images: {rows_without_images}")
+    print(f"Images successfully mapped: {len(images_by_row)}")
+    print(f"Rows without images: {len(structured_data) - len(images_by_row)}")
     
     return structured_data
+
+def calculate_image_row_score(img_from_row, img_to_row, data_row):
+    """Calculate how well an image matches a data row"""
+    
+    # Ensure img_to_row is at least img_from_row
+    img_to_row = max(img_to_row, img_from_row)
+    
+    # Calculate overlap between image span and data row
+    overlap_start = max(img_from_row, data_row)
+    overlap_end = min(img_to_row, data_row + 1)
+    overlap = max(0, overlap_end - overlap_start)
+    
+    if overlap <= 0:
+        # No overlap, but calculate proximity penalty
+        if data_row < img_from_row:
+            distance = img_from_row - data_row
+        else:
+            distance = data_row - img_to_row
+        
+        # Proximity score (decreases with distance)
+        if distance <= 2:
+            return max(0, 2 - distance)  # Score 2 for adjacent, 1 for 1 row away
+        else:
+            return 0
+    
+    # Base score from overlap amount
+    overlap_score = overlap * 10
+    
+    # Bonus for perfect alignment (image starts exactly at data row)
+    alignment_bonus = 3 if img_from_row == data_row else 0
+    
+    # Bonus for image center being close to row center
+    img_center = (img_from_row + img_to_row) / 2
+    row_center = data_row + 0.5
+    center_distance = abs(img_center - row_center)
+    center_bonus = max(0, 2 - center_distance)  # Up to 2 points for perfect centering
+    
+    # Penalty for very large images (they might span multiple rows incorrectly)
+    img_height = img_to_row - img_from_row
+    size_penalty = min(2, max(0, img_height - 3))  # Penalty for images > 3 rows tall
+    
+    total_score = overlap_score + alignment_bonus + center_bonus - size_penalty
+    
+    return max(0, total_score)
 
 if __name__ == "__main__":
     file_path = "data/20250528-探野T4-3D打印手板加工清单.xlsx"
