@@ -87,7 +87,7 @@ Internal format clearly required:
 Instructions clearly to follow:
 - Clearly translate Chinese keys exactly according to my mapping.
 - Keep original data values the same.
-- DON’T modify or lose the "image_file" reference. Clearly pass it along unchanged.
+- DON'T modify or lose the "image_file" reference. Clearly pass it along unchanged.
 - Output clearly structured valid JSON ONLY. NO OTHER TEXT.
 
 Here is the input JSON data clearly:
@@ -105,5 +105,27 @@ response = client.models.generate_content(
     contents=prompt
 )
 
-# print Gemini standardized response clearly
-print(response.text)
+# Clean and parse the response
+gemini_response = response.text.strip()
+# Remove any markdown formatting if present
+if gemini_response.startswith('```json'):
+    gemini_response = gemini_response[7:-3]
+elif gemini_response.startswith('```'):
+    gemini_response = gemini_response[3:-3]
+
+# Parse JSON response
+try:
+    gemini_output_data = json.loads(gemini_response)
+    print("✅ Successfully parsed Gemini response")
+    print(f"📊 Processed {len(gemini_output_data)} items")
+    
+    # Save the processed data for the Excel parser
+    with open('gemini_processed_data.json', 'w', encoding='utf-8') as f:
+        json.dump(gemini_output_data, f, ensure_ascii=False, indent=2)
+    
+    print("💾 Saved processed data to gemini_processed_data.json")
+    
+except json.JSONDecodeError as e:
+    print(f"❌ Error parsing JSON: {e}")
+    print(f"Raw response: {gemini_response}")
+    gemini_output_data = None

@@ -2,88 +2,108 @@ from openpyxl import Workbook
 from openpyxl.drawing.image import Image as XLImage
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 from openpyxl.utils import get_column_letter
+from datetime import datetime
 import json
 import os
 
-# Gemini structured data
-gemini_output_data = [
-  {
-    "Serial_Number": 1,
-    "Part_Name": 190169051,
-    "Quantity": 6,
-    "Material": "6061AL",
-    "Machining_Process": "机加",
-    "Surface_Finish": "120#喷砂+黑色氧化",
-    "Notes": "N/A",
-    "image_file": "null"
-  },
-  {
-    "Serial_Number": 2,
-    "Part_Name": "da-14-010578",
-    "Quantity": 3,
-    "Material": "6061AL",
-    "Machining_Process": "机加",
-    "Surface_Finish": "120#喷砂+黑色氧化",
-    "Notes": "局部镭雕去氧化面",
-    "image_file": "null"
-  },
-  {
-    "Serial_Number": 3,
-    "Part_Name": "da-14-010579",
-    "Quantity": 3,
-    "Material": "6061AL",
-    "Machining_Process": "机加",
-    "Surface_Finish": "120#喷砂+黑色氧化",
-    "Notes": "局部镭雕去氧化面",
-    "image_file": "null"
-  },
-  {
-    "Serial_Number": 4,
-    "Part_Name": "da-14-010592",
-    "Quantity": 12,
-    "Material": "6061AL",
-    "Machining_Process": "机加",
-    "Surface_Finish": "120#喷砂+黑色氧化",
-    "Notes": "局部镭雕去氧化面",
-    "image_file": "null"
-  },
-  {
-    "Serial_Number": 5,
-    "Part_Name": "da-14-010634",
-    "Quantity": 3,
-    "Material": "6061AL",
-    "Machining_Process": "机加",
-    "Surface_Finish": "120#喷砂+黑色氧化",
-    "Notes": "局部镭雕去氧化面",
-    "image_file": "null"
-  },
-  {
-    "Serial_Number": 6,
-    "Part_Name": "xieyijiexi",
-    "Quantity": 3,
-    "Material": "6061AL",
-    "Machining_Process": "机加",
-    "Surface_Finish": "120#喷砂+黑色氧化",
-    "Notes": "局部镭雕去氧化面",
-    "image_file": "null"
-  }
-]
+# Load processed data from think.py
+try:
+    with open('gemini_processed_data.json', 'r', encoding='utf-8') as f:
+        gemini_output_data = json.load(f)
+except FileNotFoundError:
+    print("❌ gemini_processed_data.json not found. Run think.py first.")
+    exit(1)
 
 # Create workbook and worksheet
 wb = Workbook()
 ws = wb.active
-ws.title = "CNC_Log"
+ws.title = "手板报价"
 
-# Define headers
-headers = ["Serial Number", "Part Name", "Quantity", "Material",
-           "Machining Process", "Surface Finish", "Notes", "Image"]
+# Company header information
+current_date = datetime.now().strftime("%Y-%m-%d")
+quote_number = f"YNMX-25-{datetime.now().strftime('%m-%d')}-314"
 
-# Write headers with formatting
-for col_num, header in enumerate(headers, 1):
-    cell = ws.cell(row=1, column=col_num)
+# Set up the header section (rows 1-12)
+ws.merge_cells('A1:H1')
+ws['A1'] = f"手板报价  编号:{quote_number}"
+ws['A1'].font = Font(name='SimSun', size=16, bold=True)
+ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+ws.row_dimensions[1].height = 25
+
+# Company information section
+ws.merge_cells('A2:D2')
+ws['A2'] = "甲方:杭州微信软件有限公司"
+ws['A2'].font = Font(name='SimSun', size=10)
+ws['A2'].alignment = Alignment(horizontal='left', vertical='center')
+
+ws.merge_cells('E2:H2')
+ws['E2'] = "乙方:杭州越依模型科技有限公司"
+ws['E2'].font = Font(name='SimSun', size=10)
+ws['E2'].alignment = Alignment(horizontal='left', vertical='center')
+
+# Contact information
+contact_info = [
+    ("联系人:舒康洪", "联系人:傅士勤"),
+    ("TEL:", "TEL: 13777479066"),
+    ("FAX:", "FAX:"),
+    ("E-mail:", "E-mail:"),
+    ("地址:", "地址:杭州市富阳区东洲工业功能区1号路11号")
+]
+
+for i, (left, right) in enumerate(contact_info, start=3):
+    ws.merge_cells(f'A{i}:D{i}')
+    ws[f'A{i}'] = left
+    ws[f'A{i}'].font = Font(name='SimSun', size=9)
+    ws[f'A{i}'].alignment = Alignment(horizontal='left', vertical='center')
+    
+    ws.merge_cells(f'E{i}:H{i}')
+    ws[f'E{i}'] = right
+    ws[f'E{i}'].font = Font(name='SimSun', size=9)
+    ws[f'E{i}'].alignment = Alignment(horizontal='left', vertical='center')
+
+# Set row heights for header section
+for row in range(2, 8):
+    ws.row_dimensions[row].height = 18
+
+# Product specification header (row 8)
+ws.merge_cells('A8:C8')
+ws['A8'] = "手板类型"
+ws['A8'].font = Font(name='SimSun', size=10, bold=True)
+ws['A8'].alignment = Alignment(horizontal='center', vertical='center')
+ws['A8'].fill = PatternFill(start_color="E6E6E6", end_color="E6E6E6", fill_type="solid")
+
+ws.merge_cells('D8:F8')
+ws['D8'] = "手板精度"
+ws['D8'].font = Font(name='SimSun', size=10, bold=True)
+ws['D8'].alignment = Alignment(horizontal='center', vertical='center')
+ws['D8'].fill = PatternFill(start_color="E6E6E6", end_color="E6E6E6", fill_type="solid")
+
+ws.merge_cells('G8:H8')
+ws['G8'] = "备注"
+ws['G8'].font = Font(name='SimSun', size=10, bold=True)
+ws['G8'].alignment = Alignment(horizontal='center', vertical='center')
+ws['G8'].fill = PatternFill(start_color="E6E6E6", end_color="E6E6E6", fill_type="solid")
+
+# Add borders to header section
+for row in range(8, 9):
+    for col in range(1, 9):
+        cell = ws.cell(row=row, column=col)
+        cell.border = Border(
+            left=Side(style="thin"),
+            right=Side(style="thin"),
+            top=Side(style="thin"),
+            bottom=Side(style="thin")
+        )
+
+# Main table headers (row 10)
+table_headers = ["序号", "零件图片", "零件名", "表面", "材质", "数量", "价(未税)", "备注"]
+header_widths = [6, 12, 15, 8, 10, 8, 12, 15]
+
+for col_num, (header, width) in enumerate(zip(table_headers, header_widths), 1):
+    cell = ws.cell(row=10, column=col_num)
     cell.value = header
-    cell.font = Font(bold=True, size=12, color="FFFFFF")
-    cell.fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    cell.font = Font(name='SimSun', size=10, bold=True)
+    cell.fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
     cell.alignment = Alignment(horizontal="center", vertical="center")
     cell.border = Border(
         left=Side(style="thin"),
@@ -91,45 +111,43 @@ for col_num, header in enumerate(headers, 1):
         top=Side(style="thin"),
         bottom=Side(style="thin")
     )
+    
+    # Set column width
+    ws.column_dimensions[get_column_letter(col_num)].width = width
 
-# Set column widths for better spacing
-column_widths = {
-    'A': 12,  # Serial Number
-    'B': 20,  # Part Name
-    'C': 10,  # Quantity
-    'D': 15,  # Material
-    'E': 18,  # Machining Process
-    'F': 15,  # Surface Finish
-    'G': 25,  # Notes
-    'H': 35   # Image (wider for images)
-}
+ws.row_dimensions[10].height = 25
 
-for col_letter, width in column_widths.items():
-    ws.column_dimensions[col_letter].width = width
-
-# Add data rows with proper formatting
-for idx, row_data in enumerate(gemini_output_data, start=2):
-    # Set row height to accommodate images properly
-    ws.row_dimensions[idx].height = 120
+# Add data rows
+for idx, row_data in enumerate(gemini_output_data, start=11):
+    # Set row height for images
+    ws.row_dimensions[idx].height = 60
+    
+    # Extract surface finish (remove numbers and special chars for display)
+    surface_display = row_data.get("Surface_Finish", "").replace("120#", "").replace("+", "+\n")
     
     # Data to write
     row_values = [
-        row_data["Serial_Number"],
-        row_data["Part_Name"],
-        row_data["Quantity"],
-        row_data["Material"],
-        row_data["Machining_Process"],
-        row_data["Surface_Finish"],
-        "" if row_data["Notes"] in ["null", None] else row_data["Notes"],
-        ""  # Image placeholder
+        row_data.get("Serial_Number", ""),
+        "",  # Image placeholder
+        row_data.get("Part_Name", ""),
+        surface_display,
+        row_data.get("Material", ""),
+        row_data.get("Quantity", ""),
+        0,  # Price placeholder
+        row_data.get("Notes", "") if row_data.get("Notes") not in ["null", None, "N/A"] else ""
     ]
     
     # Write data with formatting
     for col_num, value in enumerate(row_values, 1):
         cell = ws.cell(row=idx, column=col_num)
         cell.value = value
-        cell.alignment = Alignment(horizontal="left", vertical="top", wrap_text=True)
-        cell.font = Font(size=10)
+        cell.font = Font(name='SimSun', size=9)
+        
+        # Center alignment for specific columns
+        if col_num in [1, 2, 4, 5, 6, 7]:  # Serial, Image, Surface, Material, Quantity, Price
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        else:
+            cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
         
         # Add borders
         cell.border = Border(
@@ -138,60 +156,88 @@ for idx, row_data in enumerate(gemini_output_data, start=2):
             top=Side(style="thin"),
             bottom=Side(style="thin")
         )
-        
-        # Alternate row coloring for better readability
-        if idx % 2 == 0:
-            cell.fill = PatternFill(start_color="F8F9FA", end_color="F8F9FA", fill_type="solid")
 
-    # Handle image insertion with proper sizing and positioning
-    if row_data["image_file"] and row_data["image_file"] != "null":
+    # Handle image insertion
+    if row_data.get("image_file") and row_data["image_file"] != "null":
         image_path = os.path.join("extracted_images", row_data["image_file"])
         if os.path.exists(image_path):
             try:
                 img = XLImage(image_path)
-                
-                # Resize image to fit well in cell with margins
-                # Maximum dimensions while leaving margins
-                max_width = 200  # pixels
-                max_height = 100  # pixels
-                
-                # Calculate scaling to maintain aspect ratio
-                if img.width > max_width or img.height > max_height:
-                    width_ratio = max_width / img.width
-                    height_ratio = max_height / img.height
-                    ratio = min(width_ratio, height_ratio)
-                    
+                # Resize image to fit in cell
+                max_size = 50
+                if img.width > max_size or img.height > max_size:
+                    ratio = min(max_size/img.width, max_size/img.height)
                     img.width = int(img.width * ratio)
                     img.height = int(img.height * ratio)
                 
-                # Position image with some margin from cell edges
-                # Calculate cell position with offset for margins
-                col_letter = 'H'
-                cell_address = f"{col_letter}{idx}"
-                
-                # Add some offset to center the image in the cell
-                img.anchor = cell_address
-                
-                # Add image to worksheet
+                # Position image in the cell
+                img.anchor = f"B{idx}"
                 ws.add_image(img)
                 
             except Exception as e:
                 print(f"Error adding image for row {idx}: {e}")
-                # Add "No Image" text if image fails
-                ws[f"H{idx}"].value = "No Image"
-                ws[f"H{idx}"].alignment = Alignment(horizontal="center", vertical="center")
+
+# Add totals row
+total_row = len(gemini_output_data) + 11
+ws.merge_cells(f'A{total_row}:F{total_row}')
+ws[f'A{total_row}'] = "合计:"
+ws[f'A{total_row}'].font = Font(name='SimSun', size=10, bold=True)
+ws[f'A{total_row}'].alignment = Alignment(horizontal="right", vertical="center")
+
+ws[f'G{total_row}'] = 0
+ws[f'G{total_row}'].font = Font(name='SimSun', size=10, bold=True)
+ws[f'G{total_row}'].alignment = Alignment(horizontal="center", vertical="center")
+
+# Add borders to total row
+for col in range(1, 9):
+    cell = ws.cell(row=total_row, column=col)
+    cell.border = Border(
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin")
+    )
+
+# Footer information
+footer_start = total_row + 2
+footer_info = [
+    f"未 税 总 价: (人民币)",
+    "手板加工周期:",
+    "付款方式: 月结30天",
+    "交货日期: 确认后 (7) 日内完成",
+    "验收标准: 依据甲方2D、3D、说明文档等相关文件进行验收",
+    "备 注:",
+    "此报价单适用于所有杭州海康威视科技有限公司的子公司及关联公司。",
+    "双方以含税价格结算，具体税率按国家税务政策规定，供应商需提供合格的增值税发票，否则按基"
+]
+
+for i, info in enumerate(footer_info):
+    row_num = footer_start + i
+    if info.startswith("未 税"):
+        ws.merge_cells(f'A{row_num}:F{row_num}')
+        ws[f'A{row_num}'] = info
+        ws[f'A{row_num}'].font = Font(name='SimSun', size=10)
+        ws[f'A{row_num}'].alignment = Alignment(horizontal='left', vertical='center')
     else:
-        # Add "No Image" for missing images
-        ws[f"H{idx}"].value = "No Image Available"
-        ws[f"H{idx}"].alignment = Alignment(horizontal="center", vertical="center")
-        ws[f"H{idx}"].font = Font(italic=True, color="999999")
+        ws.merge_cells(f'A{row_num}:H{row_num}')
+        ws[f'A{row_num}'] = info
+        ws[f'A{row_num}'].font = Font(name='SimSun', size=9)
+        ws[f'A{row_num}'].alignment = Alignment(horizontal='left', vertical='center')
 
-# Freeze the header row for better navigation
-ws.freeze_panes = "A2"
+# Signature section
+signature_row = footer_start + len(footer_info) + 2
+ws.merge_cells(f'F{signature_row}:H{signature_row}')
+ws[f'F{signature_row}'] = "乙方签名确认"
+ws[f'F{signature_row}'].font = Font(name='SimSun', size=10, bold=True)
+ws[f'F{signature_row}'].alignment = Alignment(horizontal='center', vertical='center')
 
-# Auto-filter for the header row
-ws.auto_filter.ref = ws.dimensions
+ws.merge_cells(f'F{signature_row + 1}:H{signature_row + 1}')
+ws[f'F{signature_row + 1}'] = f"{current_date}"
+ws[f'F{signature_row + 1}'].font = Font(name='SimSun', size=10)
+ws[f'F{signature_row + 1}'].alignment = Alignment(horizontal='center', vertical='center')
 
 # Save the workbook
-wb.save("professional_CNC_log.xlsx")
-print("✅ Professional CNC Excel file created successfully with proper formatting!")
+output_filename = f"手板报价单_{current_date}.xlsx"
+wb.save(output_filename)
+print(f"✅ 专业中文报价单已创建: {output_filename}")
+print(f"📊 包含 {len(gemini_output_data)} 个零件项目")
