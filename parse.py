@@ -75,7 +75,7 @@ gemini_output_data = [
     "Machining_Process": "3D打印",
     "Surface_Finish": "无",
     "Notes": "N/A",
-    "image_file": "null"
+    "image_file": "image_row_9.png"
   },
   {
     "Serial_Number": 8,
@@ -135,7 +135,7 @@ gemini_output_data = [
     "Machining_Process": "3D打印",
     "Surface_Finish": "无",
     "Notes": "N/A",
-    "image_file": "null"
+    "image_file": "image_row_15.png"
   },
   {
     "Serial_Number": 14,
@@ -225,7 +225,7 @@ gemini_output_data = [
     "Machining_Process": "3D打印",
     "Surface_Finish": "无",
     "Notes": "N/A",
-    "image_file": "null"
+    "image_file": "image_row_24.png"
   },
   {
     "Serial_Number": 23,
