@@ -18,78 +18,99 @@ def extract_customer_excel(file_path, images_output_dir):
 
     os.makedirs(images_output_dir, exist_ok=True)
 
-    # Get total number of data rows
+    # Get worksheet dimensions
     max_data_row = ws.max_row
-
-    # Method 1: Simple closest row mapping
+    
+    # More precise image mapping using cell dimensions
     images_by_row = {}
     
-    # Alternative Method 2: More precise mapping using both row and column info
-    # Uncomment this section if Method 1 doesn't work well
-    """
-    for img in ws._images:
-        anchor_row = img.anchor._from.row
-        anchor_col = img.anchor._from.col
+    # Get row heights to better understand positioning
+    row_heights = {}
+    for row_num in range(1, max_data_row + 1):
+        row_heights[row_num] = ws.row_dimensions[row_num].height or 15  # Default Excel row height
+    
+    print("=== IMAGE MAPPING DEBUG ===")
+    for i, img in enumerate(ws._images):
+        # Get precise anchor position
+        anchor = img.anchor
+        from_row = anchor._from.row  # 0-based
+        from_col = anchor._from.col  # 0-based
         
-        # Check if image overlaps with any data row
-        for data_row_idx in range(1, max_data_row):  # 0-based iteration
-            actual_row_num = data_row_idx + 2  # Convert to actual row number (starting from row 2)
+        # Get the "to" position (bottom-right of image)
+        to_row = anchor.to.row if hasattr(anchor, 'to') and anchor.to else from_row
+        to_col = anchor.to.col if hasattr(anchor, 'to') and anchor.to else from_col
+        
+        # Convert to 1-based Excel row numbers
+        from_row_1based = from_row + 1
+        to_row_1based = to_row + 1
+        
+        print(f"Image {i}: from_row={from_row_1based}, to_row={to_row_1based}, from_col={from_col}, to_col={to_col}")
+        
+        # Find which data row this image most likely belongs to
+        # Strategy: find the data row that has the most overlap with the image
+        best_row = None
+        best_overlap = 0
+        
+        for data_row in range(2, max_data_row + 1):  # Data starts from row 2
+            # Calculate overlap between image and this data row
+            image_start = from_row_1based
+            image_end = max(to_row_1based, from_row_1based + 1)  # At least 1 row high
             
-            # Check if image row position is close to this data row
-            row_diff = abs(anchor_row - data_row_idx)
-            if row_diff <= 1:  # Allow 1 row tolerance
-                if actual_row_num not in images_by_row:
-                    images_by_row[actual_row_num] = img
-                    print(f"Image at ({anchor_row}, {anchor_col}) mapped to data row {actual_row_num}")
-                break
-    """
-    
-    # Method 1: Simple approach - map to closest row
-    for img in ws._images:
-        anchor_row_0based = img.anchor._from.row
-        anchor_row_1based = anchor_row_0based + 1
+            row_start = data_row
+            row_end = data_row + 1
+            
+            # Calculate overlap
+            overlap_start = max(image_start, row_start)
+            overlap_end = min(image_end, row_end)
+            overlap = max(0, overlap_end - overlap_start)
+            
+            if overlap > best_overlap:
+                best_overlap = overlap
+                best_row = data_row
         
-        # Find closest data row
-        closest_data_row = None
-        min_distance = float('inf')
-        
-        for data_row in range(2, max_data_row + 1):
-            distance = abs(anchor_row_1based - data_row)
-            if distance < min_distance:
-                min_distance = distance
-                closest_data_row = data_row
-        
-        # Always map to closest row
-        if closest_data_row:
-            if closest_data_row not in images_by_row:
-                images_by_row[closest_data_row] = img
-                print(f"Image anchored at row {anchor_row_1based} mapped to data row {closest_data_row} (distance: {min_distance})")
-            else:
-                print(f"Row {closest_data_row} already has an image, skipping image at row {anchor_row_1based}")
-    
-    # Second pass: try to assign remaining images to rows without images
-    unmapped_images = []
-    for img in ws._images:
-        anchor_row_1based = img.anchor._from.row + 1
-        is_mapped = any(mapped_img == img for mapped_img in images_by_row.values())
-        if not is_mapped:
-            unmapped_images.append((img, anchor_row_1based))
-    
-    if unmapped_images:
-        print(f"Found {len(unmapped_images)} unmapped images")
-        # Try to assign them to rows that don't have images yet
-        for img, original_row in unmapped_images:
+        # Alternative: if no good overlap, use proximity
+        if best_overlap == 0:
+            min_distance = float('inf')
             for data_row in range(2, max_data_row + 1):
-                if data_row not in images_by_row:
-                    images_by_row[data_row] = img
-                    print(f"Assigned orphan image (was at row {original_row}) to empty data row {data_row}")
-                    break
+                # Distance from image center to row center
+                image_center = (from_row_1based + to_row_1based) / 2
+                distance = abs(image_center - data_row)
+                if distance < min_distance:
+                    min_distance = distance
+                    best_row = data_row
+        
+        if best_row:
+            # Only assign if this row doesn't already have an image
+            if best_row not in images_by_row:
+                images_by_row[best_row] = img
+                print(f"  -> Mapped to data row {best_row} (overlap: {best_overlap})")
+            else:
+                print(f"  -> Row {best_row} already has image, trying next best...")
+                # Find next best row that's available
+                alternatives = []
+                for data_row in range(2, max_data_row + 1):
+                    if data_row not in images_by_row:
+                        distance = abs(from_row_1based - data_row)
+                        alternatives.append((distance, data_row))
+                
+                if alternatives:
+                    alternatives.sort()
+                    chosen_row = alternatives[0][1]
+                    images_by_row[chosen_row] = img
+                    print(f"  -> Assigned to alternative row {chosen_row}")
+                else:
+                    print(f"  -> No available rows, image not mapped")
 
+    print(f"\n=== FINAL MAPPING ===")
+    for row, img in images_by_row.items():
+        print(f"Row {row} -> Image")
+
+    # Build the structured data
     structured_data = []
     for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
         row_data = {}
         for col_idx, cell in enumerate(row):
-            if col_idx < len(headers):  # Safety check
+            if col_idx < len(headers):
                 column_name = headers[col_idx]
                 row_data[column_name] = cell.value
 
@@ -105,17 +126,13 @@ def extract_customer_excel(file_path, images_output_dir):
         row_data['image_file'] = image_filename
         structured_data.append(row_data)
 
-    # Debug info
-    print(f"Found {len(ws._images)} images total")
-    print(f"Found {len(structured_data)} data rows")
-    print(f"Mapped {len(images_by_row)} images to data rows")
+    # Final debug info
+    print(f"\n=== SUMMARY ===")
+    print(f"Total images: {len(ws._images)}")
+    print(f"Total data rows: {len(structured_data)}")
+    print(f"Images mapped: {len(images_by_row)}")
     
-    # Show which rows don't have images
-    rows_without_images = []
-    for i, row_data in enumerate(structured_data, start=2):
-        if row_data.get('image_file') is None:
-            rows_without_images.append(i)
-    
+    rows_without_images = [i for i, row_data in enumerate(structured_data, start=2) if row_data.get('image_file') is None]
     if rows_without_images:
         print(f"Rows without images: {rows_without_images}")
     
