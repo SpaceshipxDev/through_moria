@@ -378,9 +378,11 @@ Here is the input JSON data clearly:
 
 # clearly formatted Gemini API Call
 response = client.models.generate_content(
-    model="gemini-2.0-flash",
+    model="gemini-2.5-flash-preview-05-20",
     config=types.GenerateContentConfig(
-        system_instruction="You are a data conversion and formatting assistant."),
+        thinking_config = types.ThinkingConfig(
+            thinking_budget=0,
+        )),
     contents=prompt
 )
 
