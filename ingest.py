@@ -59,10 +59,31 @@ def extract_customer_excel(file_path, images_output_dir):
                 min_distance = distance
                 closest_data_row = data_row
         
-        if closest_data_row and min_distance <= 2:
+        # Always map to closest row
+        if closest_data_row:
             if closest_data_row not in images_by_row:
                 images_by_row[closest_data_row] = img
-                print(f"Image anchored at row {anchor_row_1based} mapped to data row {closest_data_row}")
+                print(f"Image anchored at row {anchor_row_1based} mapped to data row {closest_data_row} (distance: {min_distance})")
+            else:
+                print(f"Row {closest_data_row} already has an image, skipping image at row {anchor_row_1based}")
+    
+    # Second pass: try to assign remaining images to rows without images
+    unmapped_images = []
+    for img in ws._images:
+        anchor_row_1based = img.anchor._from.row + 1
+        is_mapped = any(mapped_img == img for mapped_img in images_by_row.values())
+        if not is_mapped:
+            unmapped_images.append((img, anchor_row_1based))
+    
+    if unmapped_images:
+        print(f"Found {len(unmapped_images)} unmapped images")
+        # Try to assign them to rows that don't have images yet
+        for img, original_row in unmapped_images:
+            for data_row in range(2, max_data_row + 1):
+                if data_row not in images_by_row:
+                    images_by_row[data_row] = img
+                    print(f"Assigned orphan image (was at row {original_row}) to empty data row {data_row}")
+                    break
 
     structured_data = []
     for row_idx, row in enumerate(ws.iter_rows(min_row=2), start=2):
@@ -86,7 +107,17 @@ def extract_customer_excel(file_path, images_output_dir):
 
     # Debug info
     print(f"Found {len(ws._images)} images total")
+    print(f"Found {len(structured_data)} data rows")
     print(f"Mapped {len(images_by_row)} images to data rows")
+    
+    # Show which rows don't have images
+    rows_without_images = []
+    for i, row_data in enumerate(structured_data, start=2):
+        if row_data.get('image_file') is None:
+            rows_without_images.append(i)
+    
+    if rows_without_images:
+        print(f"Rows without images: {rows_without_images}")
     
     return structured_data
 
