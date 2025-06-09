@@ -298,7 +298,7 @@ def generate_quote_excel(processed_data, output_filename):
 
     # Contact information
     contact_info = [
-        ("联系人:舒康洪", "联系人:傅士勤"),
+        ("联系人:", "联系人:傅士勤"),
         ("TEL:", "TEL: 13777479066"),
         ("FAX:", "FAX:"),
         ("E-mail:", "E-mail:"),
