@@ -1,0 +1,62 @@
+[
+  {
+    "Serial_Number": 1,
+    "Part_Name": 190169051,
+    "Quantity": 6,
+    "Material": "6061AL",
+    "Machining_Process": "机加",
+    "Surface_Finish": "120#喷砂+黑色氧化",
+    "Notes": "N/A",
+    "image_file": "null"
+  },
+  {
+    "Serial_Number": 2,
+    "Part_Name": "da-14-010578",
+    "Quantity": 3,
+    "Material": "6061AL",
+    "Machining_Process": "机加",
+    "Surface_Finish": "120#喷砂+黑色氧化",
+    "Notes": "局部镭雕去氧化面",
+    "image_file": "null"
+  },
+  {
+    "Serial_Number": 3,
+    "Part_Name": "da-14-010579",
+    "Quantity": 3,
+    "Material": "6061AL",
+    "Machining_Process": "机加",
+    "Surface_Finish": "120#喷砂+黑色氧化",
+    "Notes": "局部镭雕去氧化面",
+    "image_file": "null"
+  },
+  {
+    "Serial_Number": 4,
+    "Part_Name": "da-14-010592",
+    "Quantity": 12,
+    "Material": "6061AL",
+    "Machining_Process": "机加",
+    "Surface_Finish": "120#喷砂+黑色氧化",
+    "Notes": "局部镭雕去氧化面",
+    "image_file": "null"
+  },
+  {
+    "Serial_Number": 5,
+    "Part_Name": "da-14-010634",
+    "Quantity": 3,
+    "Material": "6061AL",
+    "Machining_Process": "机加",
+    "Surface_Finish": "120#喷砂+黑色氧化",
+    "Notes": "局部镭雕去氧化面",
+    "image_file": "null"
+  },
+  {
+    "Serial_Number": 6,
+    "Part_Name": "xieyijiexi",
+    "Quantity": 3,
+    "Material": "6061AL",
+    "Machining_Process": "机加",
+    "Surface_Finish": "120#喷砂+黑色氧化",
+    "Notes": "局部镭雕去氧化面",
+    "image_file": "null"
+  }
+]

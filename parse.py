@@ -8,7 +8,7 @@ import os
 
 # Load processed data from think.py
 try:
-    with open('gemini_processed_data.json', 'r', encoding='utf-8') as f:
+    with open('ark_processed_data.json', 'r', encoding='utf-8') as f:
         gemini_output_data = json.load(f)
 except FileNotFoundError:
     print("❌ gemini_processed_data.json not found. Run think.py first.")
