@@ -217,25 +217,25 @@ def process_with_ark(extracted_data):
     # Create prompt
     prompt = f"""You must translate and restructure the extracted JSON data into our internal CNC machining company Excel log format:
 
-Internal format required:
-- Serial_Number: 
-- Part_Name: 
-- Quantity: 
-- Material: 
-- Machining_Process: 
-- Surface_Finish: 
-- Notes: (or N/A if none)
-- image_file: (exact file name or null if not present - DO NOT modify filenames)
+    Internal format required:
+    - Serial_Number: 
+    - Part_Name: 
+    - Quantity: 
+    - Material: 
+    - Machining_Process: 
+    - Surface_Finish: 
+    - Notes: (or N/A if none)
+    - image_file: (exact file name or null if not present - DO NOT modify filenames)
 
-Instructions to follow:
-- Translate Chinese keys exactly according to my mapping.
-- Keep original data values the same.
-- DON'T modify or lose the "image_file" reference. Pass it along unchanged.
-- Output structured valid JSON ONLY. NO OTHER TEXT.
+    Instructions to follow:
+    - Translate Chinese keys exactly according to my mapping.
+    - Keep original data values the same.
+    - DON'T modify or lose the "image_file" reference. Pass it along unchanged.
+    - Output structured valid JSON ONLY. NO OTHER TEXT. Don't output empty roles. 
 
-Here is the input JSON data:
+    Here is the input JSON data:
 
-{json.dumps(extracted_data, ensure_ascii=False)}"""
+    {json.dumps(extracted_data, ensure_ascii=False)}"""
 
     try:
         print("🤖 Processing with Ark API...")
