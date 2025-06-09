@@ -276,11 +276,10 @@ def generate_quote_excel(processed_data, output_filename):
 
     # Company header information
     current_date = datetime.now().strftime("%Y-%m-%d")
-    quote_number = f"YNMX-25-{datetime.now().strftime('%m-%d')}-314"
 
     # Set up the header section (rows 1-12)
     ws.merge_cells('A1:H1')
-    ws['A1'] = f"手板报价  编号:{quote_number}"
+    ws['A1'] = f"手板报价"
     ws['A1'].font = Font(name='SimSun', size=16, bold=True)
     ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
     ws.row_dimensions[1].height = 25
