@@ -384,6 +384,7 @@ response = client.chat.completions.create(
 )
 
 ai_output = response.choices[0].message.content.strip()
+print(ai_output) 
 
 if ai_output.startswith('```json'):
     ai_output = ai_output[7:-3]
