@@ -1,21 +1,29 @@
 import os
-from openai import OpenAI
 
-client = OpenAI(
-    # 从环境变量中读取您的方舟API Key
-    api_key=os.environ.get("37946450-91ae-4a14-a7e6-3728cc785904"), 
-    base_url="https://ark.cn-beijing.volces.com/api/v3",
-    # 深度思考模型耗费时间会较长，建议您设置一个较长的超时时间，推荐为30分钟
-    timeout=1800,
+from volcenginesdkarkruntime import Ark
+
+
+# Authentication
+# 1.If you authorize your endpoint using an API key, you can set your api key to environment variable "ARK_API_KEY"
+# or specify api key by Ark(api_key="${YOUR_API_KEY}").
+# Note: If you use an API key, this API key will not be refreshed.
+# To prevent the API from expiring and failing after some time, choose an API key with no expiration date.
+
+# 2.If you authorize your endpoint with Volcengine Identity and Access Management（IAM), set your api key to environment variable "VOLC_ACCESSKEY", "VOLC_SECRETKEY"
+# or specify ak&sk by Ark(ak="${YOUR_AK}", sk="${YOUR_SK}").
+# To get your ak&sk, please refer to this document(https://www.volcengine.com/docs/6291/65568)
+# For more information，please check this document（https://www.volcengine.com/docs/82379/1263279）
+client = Ark(api_key=os.environ.get("ARK_API_KEY"))
+
+
+if __name__ == "__main__":
+    resp = client.chat.completions.create(
+        model="doubao-1-5-pro-32k-250115",
+        messages=[{"content":"天空为什么是蓝色的？","role":"user"}],
     )
-response = client.chat.completions.create(
-    # 替换 <Model> 为 Model ID
-    model="Doubao-1.5-lite-32k",
-    messages=[
-        {"role": "user", "content": "我要研究深度思考模型与非深度思考模型区别的课题，怎么体现我的专业性"}
-    ]
-)
-# 当触发深度思考时，打印思维链内容
-if hasattr(response.choices[0].message, 'reasoning_content'):
-    print(response.choices[0].message.reasoning_content)
-print(response.choices[0].message.content)
+        
+    # 深度思考模型，且触发了深度思考，打印思维链内容
+    if hasattr(resp.choices[0].message, 'reasoning_content'):
+        print(resp.choices[0].message.reasoning_content)
+         
+    print(resp.choices[0].message.content)
