@@ -377,8 +377,12 @@ def generate_quote_excel(processed_data, output_filename):
         # Set row height for images
         ws.row_dimensions[idx].height = 60
         
-        # Extract surface finish (remove numbers and special chars for display)
-        surface_display = row_data.get("Surface_Finish", "").replace("120#", "").replace("+", "+\n")
+        # FIXED: Extract surface finish with proper null handling
+        surface_finish = row_data.get("Surface_Finish", "")
+        if surface_finish is None or surface_finish == "null":
+            surface_display = ""
+        else:
+            surface_display = str(surface_finish).replace("120#", "").replace("+", "+\n")
         
         # Data to write
         row_values = [
