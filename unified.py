@@ -278,7 +278,7 @@ def generate_quote_excel(processed_data, output_filename):
     current_date = datetime.now().strftime("%Y-%m-%d")
 
     # Set up the header section (rows 1-12)
-    ws.merge_cells('A1:H1')
+    ws.merge_cells('A1:I1')  # Updated to span 9 columns
     ws['A1'] = f"手板报价"
     ws['A1'].font = Font(name='SimSun', size=16, bold=True)
     ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
@@ -290,7 +290,7 @@ def generate_quote_excel(processed_data, output_filename):
     ws['A2'].font = Font(name='SimSun', size=10)
     ws['A2'].alignment = Alignment(horizontal='left', vertical='center')
 
-    ws.merge_cells('E2:H2')
+    ws.merge_cells('E2:I2')  # Updated to span to column I
     ws['E2'] = "乙方:杭州越依模型科技有限公司"
     ws['E2'].font = Font(name='SimSun', size=10)
     ws['E2'].alignment = Alignment(horizontal='left', vertical='center')
@@ -310,7 +310,7 @@ def generate_quote_excel(processed_data, output_filename):
         ws[f'A{i}'].font = Font(name='SimSun', size=9)
         ws[f'A{i}'].alignment = Alignment(horizontal='left', vertical='center')
         
-        ws.merge_cells(f'E{i}:H{i}')
+        ws.merge_cells(f'E{i}:I{i}')  # Updated to span to column I
         ws[f'E{i}'] = right
         ws[f'E{i}'].font = Font(name='SimSun', size=9)
         ws[f'E{i}'].alignment = Alignment(horizontal='left', vertical='center')
@@ -332,7 +332,7 @@ def generate_quote_excel(processed_data, output_filename):
     ws['D8'].alignment = Alignment(horizontal='center', vertical='center')
     ws['D8'].fill = PatternFill(start_color="E6E6E6", end_color="E6E6E6", fill_type="solid")
 
-    ws.merge_cells('G8:H8')
+    ws.merge_cells('G8:I8')  # Updated to span to column I
     ws['G8'] = "备注"
     ws['G8'].font = Font(name='SimSun', size=10, bold=True)
     ws['G8'].alignment = Alignment(horizontal='center', vertical='center')
@@ -340,7 +340,7 @@ def generate_quote_excel(processed_data, output_filename):
 
     # Add borders to header section
     for row in range(8, 9):
-        for col in range(1, 9):
+        for col in range(1, 10):  # Updated to cover 9 columns
             cell = ws.cell(row=row, column=col)
             cell.border = Border(
                 left=Side(style="thin"),
@@ -349,9 +349,9 @@ def generate_quote_excel(processed_data, output_filename):
                 bottom=Side(style="thin")
             )
 
-    # Main table headers (row 10)
-    table_headers = ["序号", "零件图片", "零件名", "表面", "材质", "数量", "价(未税)", "备注"]
-    header_widths = [6, 12, 15, 8, 10, 8, 12, 15]
+    # Main table headers (row 10) - Added Total Price column
+    table_headers = ["序号", "零件图片", "零件名", "表面", "材质", "数量", "单价(未税)", "总价(未税)", "备注"]
+    header_widths = [6, 12, 15, 8, 10, 8, 12, 12, 15]
 
     for col_num, (header, width) in enumerate(zip(table_headers, header_widths), 1):
         cell = ws.cell(row=10, column=col_num)
@@ -372,16 +372,35 @@ def generate_quote_excel(processed_data, output_filename):
     ws.row_dimensions[10].height = 25
 
     # Add data rows
+    total_amount = 0  # Track total for all items
+    
     for idx, row_data in enumerate(processed_data, start=11):
         # Set row height for images
         ws.row_dimensions[idx].height = 60
         
-        # FIXED: Extract surface finish with proper null handling
+        # Extract surface finish with proper null handling
         surface_finish = row_data.get("Surface_Finish", "")
         if surface_finish is None or surface_finish == "null":
             surface_display = ""
         else:
             surface_display = str(surface_finish).replace("120#", "").replace("+", "+\n")
+        
+        # Extract quantity and unit price for total calculation
+        quantity = row_data.get("Quantity", 0)
+        unit_price = 0  # Placeholder unit price
+        
+        # Convert quantity to number if it's a string
+        try:
+            if isinstance(quantity, str) and quantity.strip():
+                quantity = float(quantity)
+            elif not isinstance(quantity, (int, float)):
+                quantity = 0
+        except (ValueError, TypeError):
+            quantity = 0
+        
+        # Calculate total price for this row
+        row_total_price = quantity * unit_price
+        total_amount += row_total_price
         
         # Data to write
         row_values = [
@@ -390,8 +409,9 @@ def generate_quote_excel(processed_data, output_filename):
             row_data.get("Part_Name", ""),
             surface_display,
             row_data.get("Material", ""),
-            row_data.get("Quantity", ""),
-            0,  # Price placeholder
+            quantity,
+            unit_price,  # Unit price placeholder
+            row_total_price,  # Total price for this row
             row_data.get("Notes", "") if row_data.get("Notes") not in ["null", None, "N/A"] else ""
         ]
         
@@ -402,7 +422,7 @@ def generate_quote_excel(processed_data, output_filename):
             cell.font = Font(name='SimSun', size=9)
             
             # Center alignment for specific columns
-            if col_num in [1, 2, 4, 5, 6, 7]:  # Serial, Image, Surface, Material, Quantity, Price
+            if col_num in [1, 2, 4, 5, 6, 7, 8]:  # Serial, Image, Surface, Material, Quantity, Unit Price, Total Price
                 cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             else:
                 cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
@@ -437,17 +457,17 @@ def generate_quote_excel(processed_data, output_filename):
 
     # Add totals row
     total_row = len(processed_data) + 11
-    ws.merge_cells(f'A{total_row}:F{total_row}')
+    ws.merge_cells(f'A{total_row}:G{total_row}')  # Updated to merge up to column G
     ws[f'A{total_row}'] = "合计:"
     ws[f'A{total_row}'].font = Font(name='SimSun', size=10, bold=True)
     ws[f'A{total_row}'].alignment = Alignment(horizontal="right", vertical="center")
 
-    ws[f'G{total_row}'] = 0
-    ws[f'G{total_row}'].font = Font(name='SimSun', size=10, bold=True)
-    ws[f'G{total_row}'].alignment = Alignment(horizontal="center", vertical="center")
+    ws[f'H{total_row}'] = total_amount  # Total amount in Total Price column
+    ws[f'H{total_row}'].font = Font(name='SimSun', size=10, bold=True)
+    ws[f'H{total_row}'].alignment = Alignment(horizontal="center", vertical="center")
 
     # Add borders to total row
-    for col in range(1, 9):
+    for col in range(1, 10):  # Updated to cover 9 columns
         cell = ws.cell(row=total_row, column=col)
         cell.border = Border(
             left=Side(style="thin"),
@@ -459,7 +479,7 @@ def generate_quote_excel(processed_data, output_filename):
     # Footer information
     footer_start = total_row + 2
     footer_info = [
-        f"未 税 总 价: (人民币)",
+        f"未 税 总 价: {total_amount} (人民币)",  # Updated to show calculated total
         "手板加工周期:",
         "付款方式: 月结30天",
         "交货日期: 确认后 (7) 日内完成",
@@ -477,22 +497,22 @@ def generate_quote_excel(processed_data, output_filename):
             ws[f'A{row_num}'].font = Font(name='SimSun', size=10)
             ws[f'A{row_num}'].alignment = Alignment(horizontal='left', vertical='center')
         else:
-            ws.merge_cells(f'A{row_num}:H{row_num}')
+            ws.merge_cells(f'A{row_num}:I{row_num}')  # Updated to span to column I
             ws[f'A{row_num}'] = info
             ws[f'A{row_num}'].font = Font(name='SimSun', size=9)
             ws[f'A{row_num}'].alignment = Alignment(horizontal='left', vertical='center')
 
     # Signature section
     signature_row = footer_start + len(footer_info) + 2
-    ws.merge_cells(f'F{signature_row}:H{signature_row}')
-    ws[f'F{signature_row}'] = "乙方签名确认"
-    ws[f'F{signature_row}'].font = Font(name='SimSun', size=10, bold=True)
-    ws[f'F{signature_row}'].alignment = Alignment(horizontal='center', vertical='center')
+    ws.merge_cells(f'G{signature_row}:I{signature_row}')  # Updated to use columns G-I
+    ws[f'G{signature_row}'] = "乙方签名确认"
+    ws[f'G{signature_row}'].font = Font(name='SimSun', size=10, bold=True)
+    ws[f'G{signature_row}'].alignment = Alignment(horizontal='center', vertical='center')
 
-    ws.merge_cells(f'F{signature_row + 1}:H{signature_row + 1}')
-    ws[f'F{signature_row + 1}'] = f"{current_date}"
-    ws[f'F{signature_row + 1}'].font = Font(name='SimSun', size=10)
-    ws[f'F{signature_row + 1}'].alignment = Alignment(horizontal='center', vertical='center')
+    ws.merge_cells(f'G{signature_row + 1}:I{signature_row + 1}')  # Updated to use columns G-I
+    ws[f'G{signature_row + 1}'] = f"{current_date}"
+    ws[f'G{signature_row + 1}'].font = Font(name='SimSun', size=10)
+    ws[f'G{signature_row + 1}'].alignment = Alignment(horizontal='center', vertical='center')
 
     # Save the workbook
     wb.save(output_filename)
