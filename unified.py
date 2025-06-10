@@ -471,6 +471,7 @@ def generate_quote_excel(processed_data, output_filename):
         row_num = footer_start + i
         if info.startswith("未 税"):
             ws.merge_cells(f'A{row_num}:F{row_num}')
+
             # For the total price display, we'll show it as text with formula reference
             if "=H" in info:
                 ws[f'A{row_num}'] = f"未 税 总 价: (人民币)"  # Keep as text, user can see total in the table
