@@ -286,7 +286,7 @@ def generate_quote_excel(processed_data, output_filename):
 
     # Company information section
     ws.merge_cells('A2:D2')
-    ws['A2'] = "甲方:杭州微信软件有限公司"
+    ws['A2'] = " "
     ws['A2'].font = Font(name='SimSun', size=10)
     ws['A2'].alignment = Alignment(horizontal='left', vertical='center')
 
