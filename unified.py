@@ -319,42 +319,14 @@ def generate_quote_excel(processed_data, output_filename):
     for row in range(2, 8):
         ws.row_dimensions[row].height = 18
 
-    # Product specification header (row 8)
-    ws.merge_cells('A8:C8')
-    ws['A8'] = "手板类型"
-    ws['A8'].font = Font(name='SimSun', size=10, bold=True)
-    ws['A8'].alignment = Alignment(horizontal='center', vertical='center')
-    ws['A8'].fill = PatternFill(start_color="E6E6E6", end_color="E6E6E6", fill_type="solid")
+    # REMOVED: Product specification header section (手板类型, 手板精度, 备注)
 
-    ws.merge_cells('D8:F8')
-    ws['D8'] = "手板精度"
-    ws['D8'].font = Font(name='SimSun', size=10, bold=True)
-    ws['D8'].alignment = Alignment(horizontal='center', vertical='center')
-    ws['D8'].fill = PatternFill(start_color="E6E6E6", end_color="E6E6E6", fill_type="solid")
-
-    ws.merge_cells('G8:I8')  # Updated to span to column I
-    ws['G8'] = "备注"
-    ws['G8'].font = Font(name='SimSun', size=10, bold=True)
-    ws['G8'].alignment = Alignment(horizontal='center', vertical='center')
-    ws['G8'].fill = PatternFill(start_color="E6E6E6", end_color="E6E6E6", fill_type="solid")
-
-    # Add borders to header section
-    for row in range(8, 9):
-        for col in range(1, 10):  # Updated to cover 9 columns
-            cell = ws.cell(row=row, column=col)
-            cell.border = Border(
-                left=Side(style="thin"),
-                right=Side(style="thin"),
-                top=Side(style="thin"),
-                bottom=Side(style="thin")
-            )
-
-    # Main table headers (row 10) - Added Total Price column
+    # Main table headers (row 8) - Updated row number since we removed the ugly section
     table_headers = ["序号", "零件图片", "零件名", "表面", "材质", "数量", "单价(未税)", "总价(未税)", "备注"]
     header_widths = [6, 12, 15, 8, 10, 8, 12, 12, 15]
 
     for col_num, (header, width) in enumerate(zip(table_headers, header_widths), 1):
-        cell = ws.cell(row=10, column=col_num)
+        cell = ws.cell(row=8, column=col_num)  # Changed from row 10 to row 8
         cell.value = header
         cell.font = Font(name='SimSun', size=10, bold=True)
         cell.fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
@@ -369,10 +341,10 @@ def generate_quote_excel(processed_data, output_filename):
         # Set column width
         ws.column_dimensions[get_column_letter(col_num)].width = width
 
-    ws.row_dimensions[10].height = 25
+    ws.row_dimensions[8].height = 25  # Changed from row 10 to row 8
 
     # Add data rows
-    data_start_row = 11
+    data_start_row = 9  # Changed from 11 to 9
     
     for idx, row_data in enumerate(processed_data, start=data_start_row):
         # Set row height for images
