@@ -437,6 +437,7 @@ def generate_quote_excel(processed_data, output_filename):
 
         # Replace the image insertion section (around line 280) with this:
 
+
         # Handle image insertion
         if row_data.get("image_file") and row_data["image_file"] != "null":
             image_path = os.path.join("extracted_images", row_data["image_file"])
@@ -450,24 +451,28 @@ def generate_quote_excel(processed_data, output_filename):
                         img.width = int(img.width * ratio)
                         img.height = int(img.height * ratio)
                     
-                    # Calculate cell dimensions (approximate)
-                    cell_width = ws.column_dimensions['B'].width * 7  # Convert to pixels (approx)
-                    cell_height = ws.row_dimensions[idx].height * 1.33  # Convert to pixels (approx)
+                    # Calculate offsets to center the image in the cell
+                    # Column B is approximately 84 pixels wide (12 * 7)
+                    # Row height is 60 which is about 80 pixels (60 * 1.33)
+                    cell_width_pixels = 84
+                    cell_height_pixels = 80
                     
-                    # Calculate center offsets
-                    x_offset = max(0, (cell_width - img.width) / 2)
-                    y_offset = max(0, (cell_height - img.height) / 2)
+                    x_offset = max(0, (cell_width_pixels - img.width) / 2)
+                    y_offset = max(0, (cell_height_pixels - img.height) / 2)
+                    
+                    # Convert pixels to EMUs (English Metric Units) - 1 pixel = 9525 EMUs
+                    x_offset_emus = int(x_offset * 9525)
+                    y_offset_emus = int(y_offset * 9525)
                     
                     # Create anchor with offset for centering
-                    from openpyxl.drawing.spreadsheet_drawing import AnchorMarker
-                    from openpyxl.drawing.spreadsheet_drawing import TwoCellAnchor
+                    from openpyxl.drawing.spreadsheet_drawing import OneCellAnchor, AnchorMarker
+                    from openpyxl.utils.units import pixels_to_EMU
                     
-                    # Create markers for positioning
-                    start_marker = AnchorMarker(col=1, colOff=int(x_offset * 9525), row=idx-1, rowOff=int(y_offset * 9525))
-                    end_marker = AnchorMarker(col=1, colOff=int((x_offset + img.width) * 9525), row=idx-1, rowOff=int((y_offset + img.height) * 9525))
+                    # Create marker with offset
+                    marker = AnchorMarker(col=1, colOff=x_offset_emus, row=idx-1, rowOff=y_offset_emus)
                     
-                    # Create two-cell anchor
-                    img.anchor = TwoCellAnchor(start_marker, end_marker)
+                    # Create one-cell anchor (simpler than two-cell)
+                    img.anchor = OneCellAnchor(_from=marker, ext=None)
                     
                     ws.add_image(img)
                     
@@ -485,7 +490,6 @@ def generate_quote_excel(processed_data, output_filename):
                         ws.add_image(img)
                     except:
                         print(f"⚠️  Complete failure adding image for row {idx}")
-
 
     # Add totals row with SUM formula
     total_row = len(processed_data) + data_start_row
