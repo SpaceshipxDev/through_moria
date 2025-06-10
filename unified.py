@@ -243,7 +243,7 @@ def process_with_qwen(extracted_data):
     try:
         print("🤖 Processing with Qwen API...")
         response = client.chat.completions.create(
-            model="qwen-plus",
+            model="qwen-turbo",
             messages=[{"role": "user", "content": prompt}],
         )
         
