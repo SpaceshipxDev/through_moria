@@ -441,33 +441,15 @@ def generate_quote_excel(processed_data, output_filename):
             if os.path.exists(image_path):
                 try:
                     img = XLImage(image_path)
-                    # Resize image to fit in cell with some padding
-                    max_size = 45
+                    # Resize image to fit in cell
+                    max_size = 50
                     if img.width > max_size or img.height > max_size:
                         ratio = min(max_size/img.width, max_size/img.height)
                         img.width = int(img.width * ratio)
                         img.height = int(img.height * ratio)
                     
-                    # Use string anchor but position it more precisely
-                    # Column B, current row, with manual positioning
-                    cell_ref = f"B{idx}"
-                    img.anchor = cell_ref
-                    
-                    # After setting anchor, adjust the positioning
-                    # This is the correct way to center in openpyxl
-                    from openpyxl.utils.units import pixels_to_EMU
-                    
-                    # Calculate center offsets (approximate cell size in pixels)
-                    cell_width = 84  # Column B width in pixels
-                    cell_height = 60  # Row height in pixels
-                    
-                    x_center = (cell_width - img.width) // 2
-                    y_center = (cell_height - img.height) // 2
-                    
-                    # Apply the centering offset after anchor is set
-                    img.anchor._from.colOff = pixels_to_EMU(x_center)
-                    img.anchor._from.rowOff = pixels_to_EMU(y_center)
-                    
+                    # Position image in the cell
+                    img.anchor = f"B{idx}"
                     ws.add_image(img)
                     
                 except Exception as e:
