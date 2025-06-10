@@ -435,6 +435,8 @@ def generate_quote_excel(processed_data, output_filename):
                 bottom=Side(style="thin")
             )
 
+        # Replace the image insertion section (around line 280) with this:
+
         # Handle image insertion
         if row_data.get("image_file") and row_data["image_file"] != "null":
             image_path = os.path.join("extracted_images", row_data["image_file"])
@@ -448,12 +450,42 @@ def generate_quote_excel(processed_data, output_filename):
                         img.width = int(img.width * ratio)
                         img.height = int(img.height * ratio)
                     
-                    # Position image in the cell
-                    img.anchor = f"B{idx}"
+                    # Calculate cell dimensions (approximate)
+                    cell_width = ws.column_dimensions['B'].width * 7  # Convert to pixels (approx)
+                    cell_height = ws.row_dimensions[idx].height * 1.33  # Convert to pixels (approx)
+                    
+                    # Calculate center offsets
+                    x_offset = max(0, (cell_width - img.width) / 2)
+                    y_offset = max(0, (cell_height - img.height) / 2)
+                    
+                    # Create anchor with offset for centering
+                    from openpyxl.drawing.spreadsheet_drawing import AnchorMarker
+                    from openpyxl.drawing.spreadsheet_drawing import TwoCellAnchor
+                    
+                    # Create markers for positioning
+                    start_marker = AnchorMarker(col=1, colOff=int(x_offset * 9525), row=idx-1, rowOff=int(y_offset * 9525))
+                    end_marker = AnchorMarker(col=1, colOff=int((x_offset + img.width) * 9525), row=idx-1, rowOff=int((y_offset + img.height) * 9525))
+                    
+                    # Create two-cell anchor
+                    img.anchor = TwoCellAnchor(start_marker, end_marker)
+                    
                     ws.add_image(img)
                     
                 except Exception as e:
                     print(f"⚠️  Error adding image for row {idx}: {e}")
+                    # Fallback to simple positioning if centering fails
+                    try:
+                        img = XLImage(image_path)
+                        max_size = 50
+                        if img.width > max_size or img.height > max_size:
+                            ratio = min(max_size/img.width, max_size/img.height)
+                            img.width = int(img.width * ratio)
+                            img.height = int(img.height * ratio)
+                        img.anchor = f"B{idx}"
+                        ws.add_image(img)
+                    except:
+                        print(f"⚠️  Complete failure adding image for row {idx}")
+
 
     # Add totals row with SUM formula
     total_row = len(processed_data) + data_start_row
