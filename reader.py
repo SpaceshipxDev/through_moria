@@ -19,9 +19,9 @@ def convert_ppt_to_images(ppt_file, output_dir=None):
         print(f"Error: File {ppt_file} not found")
         return False
     
-    # Set output directory
+    # Set output directory - force current working directory if none specified
     if output_dir is None:
-        output_dir = ppt_path.parent
+        output_dir = Path.cwd()
     else:
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
