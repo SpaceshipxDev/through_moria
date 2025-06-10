@@ -16,7 +16,7 @@ import json
 import sys
 from io import BytesIO
 from datetime import datetime
-from volcenginesdkarkruntime import Ark
+from openai import OpenAI
 
 def extract_customer_excel(file_path, images_output_dir):
     """Extract data and images from customer Excel file"""
@@ -203,16 +203,19 @@ def calculate_image_row_score(img_from_row, img_to_row, data_row):
     
     return max(0, total_score)
 
-def process_with_ark(extracted_data):
-    """Process extracted data using Volcengine Ark API"""
+def process_with_qwen(extracted_data):
+    """Process extracted data using Qwen API"""
     
     # Check for API key
-    if not os.environ.get("ARK_API_KEY"):
-        print("❌ ARK_API_KEY environment variable not set")
+    if not os.environ.get("DASHSCOPE_API_KEY"):
+        print("❌ DASHSCOPE_API_KEY environment variable not set")
         return None
     
-    # Initialize Ark client
-    client = Ark(api_key=os.environ.get("ARK_API_KEY"))
+    # Initialize OpenAI client for Qwen
+    client = OpenAI(
+        api_key=os.environ.get("DASHSCOPE_API_KEY"),
+        base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+    )
     
     # Create prompt
     prompt = f"""You must translate and restructure the extracted JSON data into our internal CNC machining company Excel log format:
@@ -238,29 +241,29 @@ def process_with_ark(extracted_data):
     {json.dumps(extracted_data, ensure_ascii=False)}"""
 
     try:
-        print("🤖 Processing with Ark API...")
+        print("🤖 Processing with Qwen API...")
         response = client.chat.completions.create(
-            model="doubao-1-5-pro-32k-250115",
-            messages=[{"content": prompt, "role": "user"}],
+            model="qwen-plus",
+            messages=[{"role": "user", "content": prompt}],
         )
         
         # Get the response content
-        ark_response = response.choices[0].message.content.strip()
+        qwen_response = response.choices[0].message.content.strip()
         
         # Clean and parse the response
-        if ark_response.startswith('```json'):
-            ark_response = ark_response[7:-3]
-        elif ark_response.startswith('```'):
-            ark_response = ark_response[3:-3]
+        if qwen_response.startswith('```json'):
+            qwen_response = qwen_response[7:-3]
+        elif qwen_response.startswith('```'):
+            qwen_response = qwen_response[3:-3]
         
         # Parse JSON response
-        processed_data = json.loads(ark_response)
-        print(f"✅ Processed {len(processed_data)} items with Ark")
+        processed_data = json.loads(qwen_response)
+        print(f"✅ Processed {len(processed_data)} items with Qwen")
         return processed_data
         
     except json.JSONDecodeError as e:
         print(f"❌ Error parsing JSON: {e}")
-        print(f"Raw response: {ark_response}")
+        print(f"Raw response: {qwen_response}")
         return None
     except Exception as e:
         print(f"❌ API call failed: {e}")
@@ -526,12 +529,12 @@ def main():
             print("❌ No data extracted from Excel file")
             sys.exit(1)
         
-        # Step 2: Process with Ark API
-        print("\n=== STEP 2: PROCESSING WITH ARK ===")
-        processed_data = process_with_ark(extracted_data)
+        # Step 2: Process with Qwen API
+        print("\n=== STEP 2: PROCESSING WITH QWEN ===")
+        processed_data = process_with_qwen(extracted_data)
         
         if not processed_data:
-            print("❌ Failed to process data with Ark API")
+            print("❌ Failed to process data with Qwen API")
             sys.exit(1)
         
         # Step 3: Generate quote Excel
