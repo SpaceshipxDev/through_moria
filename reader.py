@@ -5,7 +5,7 @@ from pathlib import Path
 
 def convert_ppt_to_images(ppt_file, output_dir=None):
     """
-    Convert PowerPoint slides to PNG images via PDF intermediate
+    Convert PowerPoint slides to individual PNG images using LibreOffice macro
     
     Args:
         ppt_file: Path to PowerPoint file (.ppt, .pptx)
@@ -26,8 +26,52 @@ def convert_ppt_to_images(ppt_file, output_dir=None):
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
     
-    # Step 1: Convert PowerPoint to PDF
-    pdf_path = output_dir / f"{ppt_path.stem}.pdf"
+    # Create a temporary macro file for LibreOffice
+    macro_content = f'''
+Sub ExportSlides
+    Dim oDoc As Object
+    Dim oSlides As Object
+    Dim oSlide As Object
+    Dim i As Integer
+    Dim sURL As String
+    Dim sOutputDir As String
+    Dim sBaseName As String
+    Dim sFileName As String
+    Dim oExportFilter As Object
+    Dim aArgs(2) As New com.sun.star.beans.PropertyValue
+    
+    oDoc = ThisComponent
+    oSlides = oDoc.getDrawPages()
+    
+    sOutputDir = "{str(output_dir).replace('\\', '/')}"
+    sBaseName = "{ppt_path.stem}"
+    
+    For i = 0 To oSlides.getCount() - 1
+        oSlide = oSlides.getByIndex(i)
+        sFileName = sOutputDir + "/" + sBaseName + "-slide-" + Format(i+1, "00") + ".png"
+        sURL = ConvertToURL(sFileName)
+        
+        aArgs(0).Name = "URL"
+        aArgs(0).Value = sURL
+        aArgs(1).Name = "FilterName"
+        aArgs(1).Value = "draw_png_Export"
+        aArgs(2).Name = "PageRange"
+        aArgs(2).Value = CStr(i+1)
+        
+        oDoc.storeToURL(sURL, aArgs())
+    Next i
+End Sub
+'''
+    
+    macro_path = output_dir / "export_macro.bas"
+    with open(macro_path, 'w') as f:
+        f.write(macro_content)
+    
+    # Alternative approach: Use LibreOffice with page range export
+    base_name = ppt_path.stem
+    
+    # First, let's try converting to PDF then splitting
+    pdf_path = output_dir / f"{base_name}.pdf"
     
     pdf_cmd = [
         "libreoffice",
@@ -39,57 +83,69 @@ def convert_ppt_to_images(ppt_file, output_dir=None):
     
     try:
         print(f"Converting {ppt_file} to PDF...")
-        result = subprocess.run(pdf_cmd, capture_output=True, text=True, check=True)
+        subprocess.run(pdf_cmd, capture_output=True, text=True, check=True)
         
         if not pdf_path.exists():
             print("Error: PDF conversion failed")
             return False
             
+        print("PDF created, now splitting into individual images...")
+        
+        # Use Python's pdf2image if available, otherwise try sips (Mac native)
+        try:
+            from pdf2image import convert_from_path
+            images = convert_from_path(str(pdf_path), dpi=300)
+            
+            for i, image in enumerate(images):
+                image_path = output_dir / f"{base_name}-slide-{i+1:02d}.png"
+                image.save(str(image_path), 'PNG')
+                print(f"Saved: {image_path}")
+            
+            # Clean up PDF
+            pdf_path.unlink()
+            macro_path.unlink(missing_ok=True)
+            
+            print(f"Success! {len(images)} slide images saved to: {output_dir}")
+            return True
+            
+        except ImportError:
+            print("pdf2image not found, trying sips (Mac native)...")
+            
+            # Use Mac's sips command
+            for page_num in range(1, 100):  # Assume max 100 slides
+                output_file = output_dir / f"{base_name}-slide-{page_num:02d}.png"
+                
+                sips_cmd = [
+                    "sips", "-s", "format", "png",
+                    str(pdf_path) + f"[{page_num-1}]",  # 0-indexed for sips
+                    "--out", str(output_file)
+                ]
+                
+                result = subprocess.run(sips_cmd, capture_output=True, text=True)
+                if result.returncode != 0:
+                    break  # No more pages
+                    
+                print(f"Saved: {output_file}")
+            
+            # Clean up
+            pdf_path.unlink()
+            macro_path.unlink(missing_ok=True)
+            
+            print(f"Success! Slide images saved to: {output_dir}")
+            return True
+            
     except subprocess.CalledProcessError as e:
-        print(f"Error converting to PDF: {e}")
-        print(f"Command error: {e.stderr}")
+        print(f"Error: {e}")
         return False
-    except FileNotFoundError:
-        print("Error: LibreOffice not found. Make sure it's installed and in your PATH")
-        return False
-    
-    # Step 2: Convert PDF pages to PNG images using ImageMagick
-    try:
-        print("Converting PDF pages to PNG images...")
-        
-        # ImageMagick command to convert all PDF pages to PNG
-        convert_cmd = [
-            "convert",
-            "-density", "300",  # High resolution
-            "-quality", "100",
-            str(pdf_path),
-            str(output_dir / f"{ppt_path.stem}-slide-%02d.png")
-        ]
-        
-        result = subprocess.run(convert_cmd, capture_output=True, text=True, check=True)
-        
-        # Clean up the temporary PDF
-        pdf_path.unlink()
-        
-        print(f"Success! Slide images saved to: {output_dir}")
-        return True
-        
-    except subprocess.CalledProcessError as e:
-        print(f"Error converting PDF to images: {e}")
-        print(f"Command error: {e.stderr}")
-        print("Make sure ImageMagick is installed (brew install imagemagick)")
-        return False
-    except FileNotFoundError:
-        print("Error: ImageMagick 'convert' command not found")
-        print("Install it with: brew install imagemagick")
+    except Exception as e:
+        print(f"Error: {e}")
         return False
 
 def main():
     if len(sys.argv) < 2:
         print("Usage: python script.py <powerpoint_file> [output_directory]")
-        print("Example: python script.py presentation.pptx screenshots/")
-        print("\nRequires: LibreOffice and ImageMagick")
-        print("Install ImageMagick: brew install imagemagick")
+        print("Example: python script.py presentation.pptx")
+        print("\nOptional: pip install pdf2image for better conversion")
         return
     
     ppt_file = sys.argv[1]
