@@ -1,60 +1,74 @@
+#!/usr/bin/env python3
 import subprocess
+import os
 import sys
+import glob
 from pathlib import Path
 
-def convert_ppt_to_images(ppt_file, output_dir=None):
+def convert_pptx_to_images(pptx_file, output_dir="./read"):
     """
-    Convert PowerPoint slides to individual PNG images using LibreOffice
+    Convert PPTX to individual slide images using LibreOffice + pdftoppm
     """
+    # Create output directory if it doesn't exist
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
     
-    ppt_path = Path(ppt_file)
-    
-    if not ppt_path.exists():
-        print(f"Error: File {ppt_file} not found")
-        return False
-    
-    # Set output directory
-    if output_dir is None:
-        output_dir = Path.cwd()
-    else:
-        output_dir = Path(output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
-    
-    # LibreOffice command to export all slides as images
-    cmd = [
-        "libreoffice",
-        "--headless",
-        "--invisible",
-        "--convert-to", "png",
-        "--outdir", str(output_dir),
-        str(ppt_path)
-    ]
+    # Get the base filename without extension
+    base_name = Path(pptx_file).stem
+    temp_pdf = f"{base_name}.pdf"
     
     try:
-        print(f"Converting slides from {ppt_file}...")
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        print(f"Done! Images saved to: {output_dir}")
-        return True
+        # Step 1: Convert PPTX to PDF using LibreOffice
+        print(f"Converting {pptx_file} to PDF...")
+        subprocess.run([
+            "libreoffice", "--headless", "--convert-to", "pdf", pptx_file
+        ], check=True)
+        
+        # Step 2: Check if PDF was created
+        if not os.path.exists(temp_pdf):
+            raise FileNotFoundError(f"PDF conversion failed - {temp_pdf} not found")
+        
+        # Step 3: Convert PDF to PNG images using pdftoppm
+        print(f"Converting PDF to images...")
+        output_prefix = os.path.join(output_dir, f"{base_name}")
+        subprocess.run([
+            "pdftoppm", "-png", temp_pdf, output_prefix
+        ], check=True)
+        
+        # Step 4: Clean up temp PDF
+        os.remove(temp_pdf)
+        
+        # Step 5: Count and report results
+        png_files = glob.glob(os.path.join(output_dir, f"{base_name}-*.png"))
+        print(f"✅ Successfully created {len(png_files)} slide images in {output_dir}")
+        
+        return png_files
         
     except subprocess.CalledProcessError as e:
-        print(f"Error: {e}")
-        print(f"Output: {e.stdout}")
-        print(f"Error: {e.stderr}")
-        return False
-    except FileNotFoundError:
-        print("LibreOffice not found. Try the full path:")
-        print('"/Applications/LibreOffice.app/Contents/MacOS/soffice"')
-        return False
+        print(f"❌ Command failed: {e}")
+        return None
+    except FileNotFoundError as e:
+        print(f"❌ File error: {e}")
+        return None
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        return None
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python script.py <powerpoint_file> [output_directory]")
-        return
+    if len(sys.argv) != 2:
+        print("Usage: python convert_slides.py <pptx_file>")
+        sys.exit(1)
     
-    ppt_file = sys.argv[1]
-    output_dir = sys.argv[2] if len(sys.argv) > 2 else None
+    pptx_file = sys.argv[1]
     
-    convert_ppt_to_images(ppt_file, output_dir)
+    if not os.path.exists(pptx_file):
+        print(f"❌ File not found: {pptx_file}")
+        sys.exit(1)
+    
+    if not pptx_file.lower().endswith('.pptx'):
+        print("❌ File must be a .pptx file")
+        sys.exit(1)
+    
+    convert_pptx_to_images(pptx_file)
 
 if __name__ == "__main__":
     main()
