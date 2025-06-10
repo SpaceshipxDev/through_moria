@@ -372,9 +372,9 @@ def generate_quote_excel(processed_data, output_filename):
     ws.row_dimensions[10].height = 25
 
     # Add data rows
-    total_amount = 0  # Track total for all items
+    data_start_row = 11
     
-    for idx, row_data in enumerate(processed_data, start=11):
+    for idx, row_data in enumerate(processed_data, start=data_start_row):
         # Set row height for images
         ws.row_dimensions[idx].height = 60
         
@@ -385,11 +385,8 @@ def generate_quote_excel(processed_data, output_filename):
         else:
             surface_display = str(surface_finish).replace("120#", "").replace("+", "+\n")
         
-        # Extract quantity and unit price for total calculation
+        # Extract quantity - keep as is, let Excel handle the math
         quantity = row_data.get("Quantity", 0)
-        unit_price = 0  # Placeholder unit price
-        
-        # Convert quantity to number if it's a string
         try:
             if isinstance(quantity, str) and quantity.strip():
                 quantity = float(quantity)
@@ -398,27 +395,30 @@ def generate_quote_excel(processed_data, output_filename):
         except (ValueError, TypeError):
             quantity = 0
         
-        # Calculate total price for this row
-        row_total_price = quantity * unit_price
-        total_amount += row_total_price
-        
-        # Data to write
+        # Data to write (no more Python calculations)
         row_values = [
             row_data.get("Serial_Number", ""),
             "",  # Image placeholder
             row_data.get("Part_Name", ""),
             surface_display,
             row_data.get("Material", ""),
-            quantity,
-            unit_price,  # Unit price placeholder
-            row_total_price,  # Total price for this row
+            quantity,  # Column F
+            0,  # Unit price placeholder - Column G
+            None,  # Total price will be formula - Column H
             row_data.get("Notes", "") if row_data.get("Notes") not in ["null", None, "N/A"] else ""
         ]
         
         # Write data with formatting
         for col_num, value in enumerate(row_values, 1):
             cell = ws.cell(row=idx, column=col_num)
-            cell.value = value
+            
+            # Special handling for total price column (Column H = 8)
+            if col_num == 8:  # Total price column
+                # Set formula: 总价 = 数量 * 单价 (F * G)
+                cell.value = f"=F{idx}*G{idx}"
+            else:
+                cell.value = value
+            
             cell.font = Font(name='SimSun', size=9)
             
             # Center alignment for specific columns
@@ -455,14 +455,17 @@ def generate_quote_excel(processed_data, output_filename):
                 except Exception as e:
                     print(f"⚠️  Error adding image for row {idx}: {e}")
 
-    # Add totals row
-    total_row = len(processed_data) + 11
-    ws.merge_cells(f'A{total_row}:G{total_row}')  # Updated to merge up to column G
+    # Add totals row with SUM formula
+    total_row = len(processed_data) + data_start_row
+    ws.merge_cells(f'A{total_row}:G{total_row}')  # Merge from A to G
     ws[f'A{total_row}'] = "合计:"
     ws[f'A{total_row}'].font = Font(name='SimSun', size=10, bold=True)
     ws[f'A{total_row}'].alignment = Alignment(horizontal="right", vertical="center")
 
-    ws[f'H{total_row}'] = total_amount  # Total amount in Total Price column
+    # Add SUM formula for total amount in Column H
+    first_data_row = data_start_row
+    last_data_row = len(processed_data) + data_start_row - 1
+    ws[f'H{total_row}'] = f"=SUM(H{first_data_row}:H{last_data_row})"
     ws[f'H{total_row}'].font = Font(name='SimSun', size=10, bold=True)
     ws[f'H{total_row}'].alignment = Alignment(horizontal="center", vertical="center")
 
@@ -476,10 +479,10 @@ def generate_quote_excel(processed_data, output_filename):
             bottom=Side(style="thin")
         )
 
-    # Footer information
+    # Footer information - now references the total cell
     footer_start = total_row + 2
     footer_info = [
-        f"未 税 总 价: {total_amount} (人民币)",  # Updated to show calculated total
+        f"未 税 总 价: =H{total_row} (人民币)",  # Reference the total cell
         "手板加工周期:",
         "付款方式: 月结30天",
         "交货日期: 确认后 (7) 日内完成",
@@ -493,7 +496,11 @@ def generate_quote_excel(processed_data, output_filename):
         row_num = footer_start + i
         if info.startswith("未 税"):
             ws.merge_cells(f'A{row_num}:F{row_num}')
-            ws[f'A{row_num}'] = info
+            # For the total price display, we'll show it as text with formula reference
+            if "=H" in info:
+                ws[f'A{row_num}'] = f"未 税 总 价: (人民币)"  # Keep as text, user can see total in the table
+            else:
+                ws[f'A{row_num}'] = info
             ws[f'A{row_num}'].font = Font(name='SimSun', size=10)
             ws[f'A{row_num}'].alignment = Alignment(horizontal='left', vertical='center')
         else:
