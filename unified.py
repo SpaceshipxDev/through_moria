@@ -440,16 +440,32 @@ def generate_quote_excel(processed_data, output_filename):
             image_path = os.path.join("extracted_images", row_data["image_file"])
             if os.path.exists(image_path):
                 try:
+                    from openpyxl.utils.units import pixels_to_EMU
+                    
                     img = XLImage(image_path)
-                    # Resize image to fit in cell
-                    max_size = 50
+                    # Resize image to fit in cell with some padding
+                    max_size = 45  # Slightly smaller to leave room for centering
                     if img.width > max_size or img.height > max_size:
                         ratio = min(max_size/img.width, max_size/img.height)
                         img.width = int(img.width * ratio)
                         img.height = int(img.height * ratio)
                     
-                    # Position image in the cell
+                    # Calculate centering offsets
+                    # Column B width is 12 units = ~84 pixels, Row height is 60 pixels
+                    cell_width_pixels = 84
+                    cell_height_pixels = 60
+                    
+                    x_offset = max(0, (cell_width_pixels - img.width) / 2)
+                    y_offset = max(0, (cell_height_pixels - img.height) / 2)
+                    
+                    # Position image in the cell with centering offsets
                     img.anchor = f"B{idx}"
+                    
+                    # Apply offsets to center the image
+                    if hasattr(img, 'anchor') and hasattr(img.anchor, '_from'):
+                        img.anchor._from.colOff = pixels_to_EMU(x_offset)
+                        img.anchor._from.rowOff = pixels_to_EMU(y_offset)
+                    
                     ws.add_image(img)
                     
                 except Exception as e:
