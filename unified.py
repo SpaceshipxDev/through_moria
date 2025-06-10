@@ -440,6 +440,47 @@ def generate_quote_excel(processed_data, output_filename):
             image_path = os.path.join("extracted_images", row_data["image_file"])
             if os.path.exists(image_path):
                 try:
+                    from openpyxl.drawing.spreadsheet_drawing import OneCellAnchor, AnchorMarker
+                    from openpyxl.utils.units import pixels_to_EMU
+                    
+                    img = XLImage(image_path)
+                    # Resize image to fit in cell with some padding
+                    max_size = 45  # Slightly smaller to leave room for centering
+                    if img.width > max_size or img.height > max_size:
+                        ratio = min(max_size/img.width, max_size/img.height)
+                        img.width = int(img.width * ratio)
+                        img.height = int(img.height * ratio)
+                    
+                    # Calculate centering offsets
+                    # Column B width is 12 units = ~84 pixels, Row height is 60 pixels
+                    cell_width_pixels = 84
+                    cell_height_pixels = 60
+                    
+                    x_offset = (cell_width_pixels - img.width) / 2
+                    y_offset = (cell_height_pixels - img.height) / 2
+                    
+                    # Create custom anchor with centering offsets
+                    marker = AnchorMarker()
+                    marker.col = 1  # Column B (0-indexed)
+                    marker.row = idx - 1  # Row (0-indexed)
+                    marker.colOff = pixels_to_EMU(x_offset)
+                    marker.rowOff = pixels_to_EMU(y_offset)
+                    
+                    # Create OneCellAnchor with the custom marker
+                    img.anchor = OneCellAnchor()
+                    img.anchor._from = marker
+                    img.anchor.ext.cx = pixels_to_EMU(img.width)
+                    img.anchor.ext.cy = pixels_to_EMU(img.height)
+                    
+                    ws.add_image(img)
+                    
+                except Exception as e:
+                    print(f"⚠️  Error adding image for row {idx}: {e}")
+
+
+            image_path = os.path.join("extracted_images", row_data["image_file"])
+            if os.path.exists(image_path):
+                try:
                     from openpyxl.utils.units import pixels_to_EMU
                     
                     img = XLImage(image_path)
