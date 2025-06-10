@@ -440,72 +440,33 @@ def generate_quote_excel(processed_data, output_filename):
             image_path = os.path.join("extracted_images", row_data["image_file"])
             if os.path.exists(image_path):
                 try:
-                    from openpyxl.drawing.spreadsheet_drawing import OneCellAnchor, AnchorMarker
-                    from openpyxl.utils.units import pixels_to_EMU
-                    
                     img = XLImage(image_path)
                     # Resize image to fit in cell with some padding
-                    max_size = 45  # Slightly smaller to leave room for centering
+                    max_size = 45
                     if img.width > max_size or img.height > max_size:
                         ratio = min(max_size/img.width, max_size/img.height)
                         img.width = int(img.width * ratio)
                         img.height = int(img.height * ratio)
                     
-                    # Calculate centering offsets
-                    # Column B width is 12 units = ~84 pixels, Row height is 60 pixels
-                    cell_width_pixels = 84
-                    cell_height_pixels = 60
+                    # Use string anchor but position it more precisely
+                    # Column B, current row, with manual positioning
+                    cell_ref = f"B{idx}"
+                    img.anchor = cell_ref
                     
-                    x_offset = (cell_width_pixels - img.width) / 2
-                    y_offset = (cell_height_pixels - img.height) / 2
-                    
-                    # Create custom anchor with centering offsets
-                    marker = AnchorMarker()
-                    marker.col = 1  # Column B (0-indexed)
-                    marker.row = idx - 1  # Row (0-indexed)
-                    marker.colOff = pixels_to_EMU(x_offset)
-                    marker.rowOff = pixels_to_EMU(y_offset)
-                    
-                    # Create OneCellAnchor with the custom marker
-                    img.anchor = OneCellAnchor()
-                    img.anchor._from = marker
-                    img.anchor.ext.cx = pixels_to_EMU(img.width)
-                    img.anchor.ext.cy = pixels_to_EMU(img.height)
-                    
-                    ws.add_image(img)
-                    
-                except Exception as e:
-                    print(f"⚠️  Error adding image for row {idx}: {e}")
-
-
-            image_path = os.path.join("extracted_images", row_data["image_file"])
-            if os.path.exists(image_path):
-                try:
+                    # After setting anchor, adjust the positioning
+                    # This is the correct way to center in openpyxl
                     from openpyxl.utils.units import pixels_to_EMU
                     
-                    img = XLImage(image_path)
-                    # Resize image to fit in cell with some padding
-                    max_size = 45  # Slightly smaller to leave room for centering
-                    if img.width > max_size or img.height > max_size:
-                        ratio = min(max_size/img.width, max_size/img.height)
-                        img.width = int(img.width * ratio)
-                        img.height = int(img.height * ratio)
+                    # Calculate center offsets (approximate cell size in pixels)
+                    cell_width = 84  # Column B width in pixels
+                    cell_height = 60  # Row height in pixels
                     
-                    # Calculate centering offsets
-                    # Column B width is 12 units = ~84 pixels, Row height is 60 pixels
-                    cell_width_pixels = 84
-                    cell_height_pixels = 60
+                    x_center = (cell_width - img.width) // 2
+                    y_center = (cell_height - img.height) // 2
                     
-                    x_offset = max(0, (cell_width_pixels - img.width) / 2)
-                    y_offset = max(0, (cell_height_pixels - img.height) / 2)
-                    
-                    # Position image in the cell with centering offsets
-                    img.anchor = f"B{idx}"
-                    
-                    # Apply offsets to center the image
-                    if hasattr(img, 'anchor') and hasattr(img.anchor, '_from'):
-                        img.anchor._from.colOff = pixels_to_EMU(x_offset)
-                        img.anchor._from.rowOff = pixels_to_EMU(y_offset)
+                    # Apply the centering offset after anchor is set
+                    img.anchor._from.colOff = pixels_to_EMU(x_center)
+                    img.anchor._from.rowOff = pixels_to_EMU(y_center)
                     
                     ws.add_image(img)
                     
