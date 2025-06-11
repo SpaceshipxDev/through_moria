@@ -369,9 +369,7 @@ def generate_quote_excel(processed_data, output_filename):
     for idx, row_data in enumerate(processed_data):
         current_row = data_start_row + idx
         
-        # Alternating row colors for better readability
-        row_fill = PatternFill(start_color=LIGHT_GRAY, end_color=LIGHT_GRAY, fill_type="solid") if idx % 2 == 0 else None
-        
+
         # Set row height for images
         ws.row_dimensions[current_row].height = 65
         
@@ -407,10 +405,6 @@ def generate_quote_excel(processed_data, output_filename):
         # Write data with modern formatting
         for col_num, value in enumerate(row_values, 1):
             cell = ws.cell(row=current_row, column=col_num)
-            
-            # Apply alternating row background
-            if row_fill:
-                cell.fill = row_fill
             
             # Special handling for total price column
             if col_num == 8:  # Total price column
