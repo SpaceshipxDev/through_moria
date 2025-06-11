@@ -469,10 +469,10 @@ def generate_quote_excel(processed_data, output_filename):
     # Minimal terms section
     terms_start = total_row + 3
     
-    # Simple terms - no header, just clean list with clearer delivery time field
+    # Simple terms - no header, just clean list
     terms = [
         "付款方式: 月结30天",
-        "交货期: 确认后 ____________ 个工作日内完成",  # Clear fillable blank with underlines
+        "交货期: 确认后 (     ) 个工作日内完成",  # Clear fillable blank
         "验收标准: 依据甲方2D、3D图纸及说明文档进行验收",
         "本报价单适用于杭州海康威视科技有限公司及其子公司、关联公司",
         "报价有效期: 30天",
