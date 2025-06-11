@@ -270,97 +270,107 @@ def process_with_qwen(extracted_data):
         return None
 
 def generate_quote_excel(processed_data, output_filename):
-    """Generate formatted quote Excel file"""
+    """Generate beautifully formatted modern quote Excel file"""
     
     # Create workbook and worksheet
     wb = Workbook()
     ws = wb.active
-    ws.title = "手板报价"
+    ws.title = "Quote"
 
-    # Company header information
-    current_date = datetime.now().strftime("%Y-%m-%d")
+    # Modern color palette
+    BRAND_BLUE = "2E86AB"      # Professional blue
+    ACCENT_BLUE = "A23B72"     # Accent color
+    LIGHT_GRAY = "F8F9FA"      # Very light background
+    MEDIUM_GRAY = "6C757D"     # Text gray
+    DARK_GRAY = "343A40"       # Dark text
+    SUCCESS_GREEN = "28A745"   # For totals
+    
+    current_date = datetime.now().strftime("%B %d, %Y")
 
-    # Set up the header section (rows 1-12)
-    ws.merge_cells('A1:I1')  # Updated to span 9 columns
-    ws['A1'] = f"手板报价"
-    ws['A1'].font = Font(name='SimSun', size=16, bold=True)
-    ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
-    ws.row_dimensions[1].height = 25
-
-    # Company information section
-    ws.merge_cells('A2:D2')
-    ws['A2'] = "甲方："
-    ws['A2'].font = Font(name='SimSun', size=10)
-    ws['A2'].alignment = Alignment(horizontal='left', vertical='center')
-
-    ws.merge_cells('E2:I2')  # Updated to span to column I
-    ws['E2'] = "乙方:杭州越依模型科技有限公司"
-    ws['E2'].font = Font(name='SimSun', size=10)
-    ws['E2'].alignment = Alignment(horizontal='left', vertical='center')
-
-    # Contact information
-    contact_info = [
-        ("联系人:", "联系人:傅士勤"),
-        ("TEL:", "TEL: 13777479066"),
-        ("FAX:", "FAX:"),
-        ("E-mail:", "E-mail:"),
-        ("地址:", "地址:杭州市富阳区东洲工业功能区1号路11号")
+    # Set default font for the entire sheet
+    ws.sheet_properties.defaultRowHeight = 18
+    
+    # Modern header section with clean spacing
+    ws.merge_cells('A1:H1')
+    ws['A1'] = "QUOTATION"
+    ws['A1'].font = Font(name='Calibri', size=28, bold=True, color=DARK_GRAY)
+    ws['A1'].alignment = Alignment(horizontal='left', vertical='center')
+    ws.row_dimensions[1].height = 45
+    
+    # Quote number and date - modern layout
+    ws.merge_cells('A3:D3')
+    ws['A3'] = f"Quote #QT-{datetime.now().strftime('%Y%m%d')}"
+    ws['A3'].font = Font(name='Calibri', size=12, color=MEDIUM_GRAY)
+    ws['A3'].alignment = Alignment(horizontal='left', vertical='center')
+    
+    ws.merge_cells('E3:H3')
+    ws['E3'] = f"Date: {current_date}"
+    ws['E3'].font = Font(name='Calibri', size=12, color=MEDIUM_GRAY)
+    ws['E3'].alignment = Alignment(horizontal='right', vertical='center')
+    
+    # Company section with modern card-like design
+    ws.merge_cells('A5:H5')
+    ws['A5'] = "FROM"
+    ws['A5'].font = Font(name='Calibri', size=10, bold=True, color=MEDIUM_GRAY)
+    ws['A5'].alignment = Alignment(horizontal='left', vertical='center')
+    
+    # Company details in a clean layout
+    company_info = [
+        "Hangzhou Yueyi Model Technology Co., Ltd.",
+        "Contact: Fu Shiqin",
+        "Phone: +86 137 7747 9066",
+        "Address: No.11, Road 1, Dongzhou Industrial Zone, Fuyang District, Hangzhou"
     ]
-
-    for i, (left, right) in enumerate(contact_info, start=3):
-        ws.merge_cells(f'A{i}:D{i}')
-        ws[f'A{i}'] = left
-        ws[f'A{i}'].font = Font(name='SimSun', size=9)
+    
+    for i, info in enumerate(company_info, start=6):
+        ws.merge_cells(f'A{i}:H{i}')
+        ws[f'A{i}'] = info
+        ws[f'A{i}'].font = Font(name='Calibri', size=11, color=DARK_GRAY)
         ws[f'A{i}'].alignment = Alignment(horizontal='left', vertical='center')
-        
-        ws.merge_cells(f'E{i}:I{i}')  # Updated to span to column I
-        ws[f'E{i}'] = right
-        ws[f'E{i}'].font = Font(name='SimSun', size=9)
-        ws[f'E{i}'].alignment = Alignment(horizontal='left', vertical='center')
+        ws.row_dimensions[i].height = 20
 
-    # Set row heights for header section
-    for row in range(2, 8):
-        ws.row_dimensions[row].height = 18
-
-    # REMOVED: Product specification header section (手板类型, 手板精度, 备注)
-
-    # Main table headers (row 8) - Updated row number since we removed the ugly section
-    table_headers = ["序号", "零件图片", "零件名", "表面", "材质", "数量", "单价(未税)", "总价(未税)", "备注"]
-    header_widths = [6, 12, 15, 8, 10, 8, 12, 12, 15]
-
+    # Add some breathing room
+    ws.row_dimensions[10].height = 25
+    
+    # Modern table headers with clean design
+    table_headers = ["#", "Image", "Part Name", "Surface", "Material", "Qty", "Unit Price", "Total"]
+    header_widths = [5, 12, 20, 12, 15, 8, 15, 15]
+    
+    # Create header row with modern styling
+    header_row = 11
     for col_num, (header, width) in enumerate(zip(table_headers, header_widths), 1):
-        cell = ws.cell(row=8, column=col_num)  # Changed from row 10 to row 8
+        cell = ws.cell(row=header_row, column=col_num)
         cell.value = header
-        cell.font = Font(name='SimSun', size=10, bold=True)
-        cell.fill = PatternFill(start_color="D9D9D9", end_color="D9D9D9", fill_type="solid")
+        cell.font = Font(name='Calibri', size=11, bold=True, color="FFFFFF")
+        cell.fill = PatternFill(start_color=BRAND_BLUE, end_color=BRAND_BLUE, fill_type="solid")
         cell.alignment = Alignment(horizontal="center", vertical="center")
-        cell.border = Border(
-            left=Side(style="thin"),
-            right=Side(style="thin"),
-            top=Side(style="thin"),
-            bottom=Side(style="thin")
-        )
+        # No borders for cleaner look
         
         # Set column width
         ws.column_dimensions[get_column_letter(col_num)].width = width
 
-    ws.row_dimensions[8].height = 25  # Changed from row 10 to row 8
+    ws.row_dimensions[header_row].height = 35
 
-    # Add data rows
-    data_start_row = 9  # Changed from 11 to 9
+    # Add data rows with alternating background and clean styling
+    data_start_row = 12
     
-    for idx, row_data in enumerate(processed_data, start=data_start_row):
-        # Set row height for images
-        ws.row_dimensions[idx].height = 60
+    for idx, row_data in enumerate(processed_data):
+        current_row = data_start_row + idx
         
-        # Extract surface finish with proper null handling
+        # Alternating row colors for better readability
+        row_fill = PatternFill(start_color=LIGHT_GRAY, end_color=LIGHT_GRAY, fill_type="solid") if idx % 2 == 0 else None
+        
+        # Set row height for images
+        ws.row_dimensions[current_row].height = 65
+        
+        # Clean surface finish display
         surface_finish = row_data.get("Surface_Finish", "")
         if surface_finish is None or surface_finish == "null":
-            surface_display = ""
+            surface_display = "—"
         else:
-            surface_display = str(surface_finish).replace("120#", "").replace("+", "+\n")
+            surface_display = str(surface_finish).replace("120#", "").replace("+", " + ")
         
-        # Extract quantity - keep as is, let Excel handle the math
+        # Extract and format quantity
         quantity = row_data.get("Quantity", 0)
         try:
             if isinstance(quantity, str) and quantity.strip():
@@ -370,138 +380,148 @@ def generate_quote_excel(processed_data, output_filename):
         except (ValueError, TypeError):
             quantity = 0
         
-        # Data to write (no more Python calculations)
+        # Clean data values
         row_values = [
-            row_data.get("Serial_Number", ""),
+            f"{idx + 1:02d}",  # Zero-padded serial number
             "",  # Image placeholder
-            row_data.get("Part_Name", ""),
+            row_data.get("Part_Name", "—"),
             surface_display,
-            row_data.get("Material", ""),
-            quantity,  # Column F
-            0,  # Unit price placeholder - Column G
-            None,  # Total price will be formula - Column H
-            row_data.get("Notes", "") if row_data.get("Notes") not in ["null", None, "N/A"] else ""
+            row_data.get("Material", "—"),
+            int(quantity) if quantity == int(quantity) else quantity,
+            0,  # Unit price placeholder
+            None,  # Total will be formula
         ]
         
-        # Write data with formatting
+        # Write data with modern formatting
         for col_num, value in enumerate(row_values, 1):
-            cell = ws.cell(row=idx, column=col_num)
+            cell = ws.cell(row=current_row, column=col_num)
             
-            # Special handling for total price column (Column H = 8)
+            # Apply alternating row background
+            if row_fill:
+                cell.fill = row_fill
+            
+            # Special handling for total price column
             if col_num == 8:  # Total price column
-                # Set formula: 总价 = 数量 * 单价 (F * G)
-                cell.value = f"=F{idx}*G{idx}"
+                cell.value = f"=F{current_row}*G{current_row}"
+                cell.font = Font(name='Calibri', size=11, bold=True, color=DARK_GRAY)
+                cell.number_format = '"¥"#,##0.00'  # Currency formatting
+            elif col_num == 7:  # Unit price column
+                cell.value = value
+                cell.font = Font(name='Calibri', size=11, color=DARK_GRAY)
+                cell.number_format = '"¥"#,##0.00'  # Currency formatting
+            elif col_num == 6:  # Quantity column
+                cell.value = value
+                cell.font = Font(name='Calibri', size=11, color=DARK_GRAY)
+                cell.number_format = '#,##0'  # Number formatting
             else:
                 cell.value = value
+                cell.font = Font(name='Calibri', size=11, color=DARK_GRAY)
             
-            cell.font = Font(name='SimSun', size=9)
-            
-            # Center alignment for specific columns
-            if col_num in [1, 2, 4, 5, 6, 7, 8]:  # Serial, Image, Surface, Material, Quantity, Unit Price, Total Price
+            # Modern alignment - no borders for cleaner look
+            if col_num in [1, 2, 6, 7, 8]:  # Center align numbers and images
                 cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             else:
                 cell.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
-            
-            # Add borders
-            cell.border = Border(
-                left=Side(style="thin"),
-                right=Side(style="thin"),
-                top=Side(style="thin"),
-                bottom=Side(style="thin")
-            )
 
-        # Handle image insertion
+        # Handle image insertion with better positioning
         if row_data.get("image_file") and row_data["image_file"] != "null":
             image_path = os.path.join("extracted_images", row_data["image_file"])
             if os.path.exists(image_path):
                 try:
                     img = XLImage(image_path)
-                    # Resize image to fit in cell
-                    max_size = 50
+                    # Resize image to fit nicely in cell
+                    max_size = 55
                     if img.width > max_size or img.height > max_size:
                         ratio = min(max_size/img.width, max_size/img.height)
                         img.width = int(img.width * ratio)
                         img.height = int(img.height * ratio)
                     
-                    # Position image in the cell
-                    img.anchor = f"B{idx}"
+                    # Center the image in the cell
+                    img.anchor = f"B{current_row}"
                     ws.add_image(img)
                     
                 except Exception as e:
-                    print(f"⚠️  Error adding image for row {idx}: {e}")
+                    print(f"⚠️  Error adding image for row {current_row}: {e}")
 
-    # Add totals row with SUM formula
-    total_row = len(processed_data) + data_start_row
-    ws.merge_cells(f'A{total_row}:G{total_row}')  # Merge from A to G
-    ws[f'A{total_row}'] = "合计:"
-    ws[f'A{total_row}'].font = Font(name='SimSun', size=10, bold=True)
+    # Modern totals section
+    total_row = len(processed_data) + data_start_row + 1
+    ws.row_dimensions[total_row].height = 35
+    
+    # Subtotal row
+    ws.merge_cells(f'A{total_row}:G{total_row}')
+    ws[f'A{total_row}'] = "SUBTOTAL"
+    ws[f'A{total_row}'].font = Font(name='Calibri', size=12, bold=True, color=DARK_GRAY)
     ws[f'A{total_row}'].alignment = Alignment(horizontal="right", vertical="center")
-
-    # Add SUM formula for total amount in Column H
+    
     first_data_row = data_start_row
     last_data_row = len(processed_data) + data_start_row - 1
     ws[f'H{total_row}'] = f"=SUM(H{first_data_row}:H{last_data_row})"
-    ws[f'H{total_row}'].font = Font(name='SimSun', size=10, bold=True)
+    ws[f'H{total_row}'].font = Font(name='Calibri', size=12, bold=True, color=SUCCESS_GREEN)
     ws[f'H{total_row}'].alignment = Alignment(horizontal="center", vertical="center")
+    ws[f'H{total_row}'].number_format = '"¥"#,##0.00'
+    ws[f'H{total_row}'].fill = PatternFill(start_color=LIGHT_GRAY, end_color=LIGHT_GRAY, fill_type="solid")
 
-    # Add borders to total row
-    for col in range(1, 10):  # Updated to cover 9 columns
-        cell = ws.cell(row=total_row, column=col)
-        cell.border = Border(
-            left=Side(style="thin"),
-            right=Side(style="thin"),
-            top=Side(style="thin"),
-            bottom=Side(style="thin")
-        )
-
-    # Footer information - now references the total cell
-    footer_start = total_row + 2
-    footer_info = [
-        f"未 税 总 价: =H{total_row} (人民币)",  # Reference the total cell
-        "手板加工周期:",
-        "付款方式: 月结30天",
-        "交货日期: 确认后 (7) 日内完成",
-        "验收标准: 依据甲方2D、3D、说明文档等相关文件进行验收",
-        "备 注:",
-        "此报价单适用于所有杭州海康威视科技有限公司的子公司及关联公司。",
-        "双方以含税价格结算，具体税率按国家税务政策规定，供应商需提供合格的增值税发票，否则按基"
+    # Terms section with modern layout
+    terms_start = total_row + 3
+    
+    # Terms header
+    ws.merge_cells(f'A{terms_start}:H{terms_start}')
+    ws[f'A{terms_start}'] = "TERMS & CONDITIONS"
+    ws[f'A{terms_start}'].font = Font(name='Calibri', size=12, bold=True, color=DARK_GRAY)
+    ws[f'A{terms_start}'].alignment = Alignment(horizontal='left', vertical='center')
+    ws.row_dimensions[terms_start].height = 25
+    
+    # Clean terms list
+    terms = [
+        "• Payment Terms: Net 30 days",
+        "• Delivery: 7 days after confirmation",
+        "• Quality: According to 2D/3D drawings and specifications",
+        "• This quote is valid for Hangzhou Hikvision and affiliated companies",
+        "• Prices are subject to change without notice",
+        "• All prices are in Chinese Yuan (¥)"
     ]
+    
+    for i, term in enumerate(terms, start=terms_start + 1):
+        ws.merge_cells(f'A{i}:H{i}')
+        ws[f'A{i}'] = term
+        ws[f'A{i}'].font = Font(name='Calibri', size=10, color=MEDIUM_GRAY)
+        ws[f'A{i}'].alignment = Alignment(horizontal='left', vertical='center')
+        ws.row_dimensions[i].height = 20
 
-    for i, info in enumerate(footer_info):
-        row_num = footer_start + i
-        if info.startswith("未 税"):
-            ws.merge_cells(f'A{row_num}:F{row_num}')
+    # Modern signature section
+    signature_row = terms_start + len(terms) + 3
+    ws.merge_cells(f'F{signature_row}:H{signature_row}')
+    ws[f'F{signature_row}'] = "Authorized Signature"
+    ws[f'F{signature_row}'].font = Font(name='Calibri', size=11, bold=True, color=DARK_GRAY)
+    ws[f'F{signature_row}'].alignment = Alignment(horizontal='center', vertical='center')
+    ws.row_dimensions[signature_row].height = 25
+    
+    # Add signature line
+    ws.merge_cells(f'F{signature_row + 2}:H{signature_row + 2}')
+    ws[f'F{signature_row + 2}'] = "________________________"
+    ws[f'F{signature_row + 2}'].font = Font(name='Calibri', size=10, color=MEDIUM_GRAY)
+    ws[f'F{signature_row + 2}'].alignment = Alignment(horizontal='center', vertical='center')
+    
+    ws.merge_cells(f'F{signature_row + 3}:H{signature_row + 3}')
+    ws[f'F{signature_row + 3}'] = current_date
+    ws[f'F{signature_row + 3}'].font = Font(name='Calibri', size=10, color=MEDIUM_GRAY)
+    ws[f'F{signature_row + 3}'].alignment = Alignment(horizontal='center', vertical='center')
 
-            # For the total price display, we'll show it as text with formula reference
-            if "=H" in info:
-                ws[f'A{row_num}'] = f"未 税 总 价: (人民币)"  # Keep as text, user can see total in the table
-            else:
-                ws[f'A{row_num}'] = info
-            ws[f'A{row_num}'].font = Font(name='SimSun', size=10)
-            ws[f'A{row_num}'].alignment = Alignment(horizontal='left', vertical='center')
-        else:
-            ws.merge_cells(f'A{row_num}:I{row_num}')  # Updated to span to column I
-            ws[f'A{row_num}'] = info
-            ws[f'A{row_num}'].font = Font(name='SimSun', size=9)
-            ws[f'A{row_num}'].alignment = Alignment(horizontal='left', vertical='center')
-
-    # Signature section
-    signature_row = footer_start + len(footer_info) + 2
-    ws.merge_cells(f'G{signature_row}:I{signature_row}')  # Updated to use columns G-I
-    ws[f'G{signature_row}'] = "乙方签名确认"
-    ws[f'G{signature_row}'].font = Font(name='SimSun', size=10, bold=True)
-    ws[f'G{signature_row}'].alignment = Alignment(horizontal='center', vertical='center')
-
-    ws.merge_cells(f'G{signature_row + 1}:I{signature_row + 1}')  # Updated to use columns G-I
-    ws[f'G{signature_row + 1}'] = f"{current_date}"
-    ws[f'G{signature_row + 1}'].font = Font(name='SimSun', size=10)
-    ws[f'G{signature_row + 1}'].alignment = Alignment(horizontal='center', vertical='center')
-
+    # Remove gridlines for cleaner look
+    ws.sheet_view.showGridLines = False
+    
+    # Set page margins for better printing
+    ws.page_margins.left = 0.75
+    ws.page_margins.right = 0.75
+    ws.page_margins.top = 1.0
+    ws.page_margins.bottom = 1.0
+    
     # Save the workbook
     wb.save(output_filename)
-    print(f"✅ Quote Excel generated: {output_filename}")
+    print(f"✅ Modern quote Excel generated: {output_filename}")
     return output_filename
 
+    
 def main():
     """Main pipeline function"""
     
