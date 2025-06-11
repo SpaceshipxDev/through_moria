@@ -298,7 +298,7 @@ def generate_quote_excel(processed_data, output_filename):
     
     # Party A (Customer) section - fillable (NO yellow fill)
     ws.merge_cells('A3:H3')
-    ws['A3'] = "甲方信息 (客户信息)"
+    ws['A3'] = "甲方信息"
     ws['A3'].font = Font(name='Microsoft YaHei', size=12, bold=True, color=DARK_GRAY)
     ws['A3'].alignment = Alignment(horizontal='left', vertical='center')
     ws.row_dimensions[3].height = 25
@@ -321,7 +321,7 @@ def generate_quote_excel(processed_data, output_filename):
     
     # Party B (Our company) section
     ws.merge_cells('A9:H9')
-    ws['A9'] = "乙方信息 (供应商信息)"
+    ws['A9'] = "乙方信息"
     ws['A9'].font = Font(name='Microsoft YaHei', size=12, bold=True, color=DARK_GRAY)
     ws['A9'].alignment = Alignment(horizontal='left', vertical='center')
     ws.row_dimensions[9].height = 25
