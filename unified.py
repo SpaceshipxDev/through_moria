@@ -284,9 +284,8 @@ def generate_quote_excel(processed_data, output_filename):
     MEDIUM_GRAY = "6C757D"     # Text gray
     DARK_GRAY = "343A40"       # Dark text
     SUCCESS_GREEN = "28A745"   # For totals
+    FILL_YELLOW = "FFF3CD"     # Highlight color for fillable fields
     
-    current_date = datetime.now().strftime("%Y年%m月%d日")
-
     # Set default font for the entire sheet
     ws.sheet_properties.defaultRowHeight = 18
     
@@ -297,25 +296,14 @@ def generate_quote_excel(processed_data, output_filename):
     ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
     ws.row_dimensions[1].height = 45
     
-    # Quote number and date - modern layout
-    ws.merge_cells('A3:D3')
-    ws['A3'] = f"报价单号: QT-{datetime.now().strftime('%Y%m%d')}"
-    ws['A3'].font = Font(name='Microsoft YaHei', size=12, color=MEDIUM_GRAY)
-    ws['A3'].alignment = Alignment(horizontal='left', vertical='center')
-    
-    ws.merge_cells('E3:H3')
-    ws['E3'] = f"日期: {current_date}"
-    ws['E3'].font = Font(name='Microsoft YaHei', size=12, color=MEDIUM_GRAY)
-    ws['E3'].alignment = Alignment(horizontal='right', vertical='center')
-    
     # Party A (Customer) section - fillable
-    ws.merge_cells('A5:H5')
-    ws['A5'] = "甲方信息 (客户信息)"
-    ws['A5'].font = Font(name='Microsoft YaHei', size=12, bold=True, color=DARK_GRAY)
-    ws['A5'].alignment = Alignment(horizontal='left', vertical='center')
-    ws.row_dimensions[5].height = 25
+    ws.merge_cells('A3:H3')
+    ws['A3'] = "甲方信息 (客户信息)"
+    ws['A3'].font = Font(name='Microsoft YaHei', size=12, bold=True, color=DARK_GRAY)
+    ws['A3'].alignment = Alignment(horizontal='left', vertical='center')
+    ws.row_dimensions[3].height = 25
     
-    # Fillable customer fields
+    # Fillable customer fields with yellow highlight
     customer_fields = [
         "甲方公司: ___________________________",
         "联系人: ___________________________", 
@@ -323,19 +311,20 @@ def generate_quote_excel(processed_data, output_filename):
         "邮箱: ___________________________"
     ]
     
-    for i, field in enumerate(customer_fields, start=6):
+    for i, field in enumerate(customer_fields, start=4):
         ws.merge_cells(f'A{i}:H{i}')
         ws[f'A{i}'] = field
         ws[f'A{i}'].font = Font(name='Microsoft YaHei', size=11, color=DARK_GRAY)
         ws[f'A{i}'].alignment = Alignment(horizontal='left', vertical='center')
+        ws[f'A{i}'].fill = PatternFill(start_color=FILL_YELLOW, end_color=FILL_YELLOW, fill_type="solid")
         ws.row_dimensions[i].height = 22
     
     # Party B (Our company) section
-    ws.merge_cells('A11:H11')
-    ws['A11'] = "乙方信息 (供应商信息)"
-    ws['A11'].font = Font(name='Microsoft YaHei', size=12, bold=True, color=DARK_GRAY)
-    ws['A11'].alignment = Alignment(horizontal='left', vertical='center')
-    ws.row_dimensions[11].height = 25
+    ws.merge_cells('A9:H9')
+    ws['A9'] = "乙方信息 (供应商信息)"
+    ws['A9'].font = Font(name='Microsoft YaHei', size=12, bold=True, color=DARK_GRAY)
+    ws['A9'].alignment = Alignment(horizontal='left', vertical='center')
+    ws.row_dimensions[9].height = 25
     
     # Company details in a clean layout
     company_info = [
@@ -345,7 +334,7 @@ def generate_quote_excel(processed_data, output_filename):
         "地址: 杭州市富阳区东洲工业功能区1号路11号"
     ]
     
-    for i, info in enumerate(company_info, start=12):
+    for i, info in enumerate(company_info, start=10):
         ws.merge_cells(f'A{i}:H{i}')
         ws[f'A{i}'] = info
         ws[f'A{i}'].font = Font(name='Microsoft YaHei', size=11, color=DARK_GRAY)
@@ -353,14 +342,14 @@ def generate_quote_excel(processed_data, output_filename):
         ws.row_dimensions[i].height = 20
 
     # Add some breathing room
-    ws.row_dimensions[16].height = 25
+    ws.row_dimensions[14].height = 25
     
     # Modern table headers with clean design
     table_headers = ["序号", "零件图片", "零件名称", "表面处理", "材质", "数量", "单价(未税)", "总价(未税)"]
     header_widths = [6, 12, 20, 12, 15, 8, 15, 15]
     
     # Create header row with modern styling
-    header_row = 17
+    header_row = 15
     for col_num, (header, width) in enumerate(zip(table_headers, header_widths), 1):
         cell = ws.cell(row=header_row, column=col_num)
         cell.value = header
@@ -375,7 +364,7 @@ def generate_quote_excel(processed_data, output_filename):
     ws.row_dimensions[header_row].height = 35
 
     # Add data rows with alternating background and clean styling
-    data_start_row = 18
+    data_start_row = 16
     
     for idx, row_data in enumerate(processed_data):
         current_row = data_start_row + idx
@@ -432,6 +421,8 @@ def generate_quote_excel(processed_data, output_filename):
                 cell.value = value
                 cell.font = Font(name='Microsoft YaHei', size=11, color=DARK_GRAY)
                 cell.number_format = '"¥"#,##0.00'  # Currency formatting
+                # Highlight unit price for filling
+                cell.fill = PatternFill(start_color=FILL_YELLOW, end_color=FILL_YELLOW, fill_type="solid")
             elif col_num == 6:  # Quantity column
                 cell.value = value
                 cell.font = Font(name='Microsoft YaHei', size=11, color=DARK_GRAY)
@@ -494,10 +485,10 @@ def generate_quote_excel(processed_data, output_filename):
     ws[f'A{terms_start}'].alignment = Alignment(horizontal='left', vertical='center')
     ws.row_dimensions[terms_start].height = 25
     
-    # Clean terms list
+    # Clean terms list with fillable delivery time
     terms = [
         "• 付款方式: 月结30天",
-        "• 交货期: 确认后7个工作日内完成",
+        "• 交货期: 确认后 (     ) 个工作日内完成",  # Made fillable with prominent brackets
         "• 验收标准: 依据甲方2D、3D图纸及说明文档进行验收",
         "• 本报价单适用于杭州海康威视科技有限公司及其子公司、关联公司",
         "• 报价有效期: 30天",
@@ -510,6 +501,10 @@ def generate_quote_excel(processed_data, output_filename):
         ws[f'A{i}'].font = Font(name='Microsoft YaHei', size=10, color=MEDIUM_GRAY)
         ws[f'A{i}'].alignment = Alignment(horizontal='left', vertical='center')
         ws.row_dimensions[i].height = 20
+        
+        # Highlight the delivery term row for easy spotting
+        if "交货期" in term:
+            ws[f'A{i}'].fill = PatternFill(start_color=FILL_YELLOW, end_color=FILL_YELLOW, fill_type="solid")
 
     # Modern signature section
     signature_row = terms_start + len(terms) + 3
@@ -524,11 +519,6 @@ def generate_quote_excel(processed_data, output_filename):
     ws[f'F{signature_row + 2}'] = "________________________"
     ws[f'F{signature_row + 2}'].font = Font(name='Microsoft YaHei', size=10, color=MEDIUM_GRAY)
     ws[f'F{signature_row + 2}'].alignment = Alignment(horizontal='center', vertical='center')
-    
-    ws.merge_cells(f'F{signature_row + 3}:H{signature_row + 3}')
-    ws[f'F{signature_row + 3}'] = datetime.now().strftime("%Y年%m月%d日")
-    ws[f'F{signature_row + 3}'].font = Font(name='Microsoft YaHei', size=10, color=MEDIUM_GRAY)
-    ws[f'F{signature_row + 3}'].alignment = Alignment(horizontal='center', vertical='center')
 
     # Remove gridlines for cleaner look
     ws.sheet_view.showGridLines = False
@@ -583,8 +573,7 @@ def main():
         
         # Step 3: Generate quote Excel
         print("\n=== STEP 3: GENERATING QUOTE ===")
-        current_date = datetime.now().strftime("%Y-%m-%d")
-        output_filename = f"手板报价单_{current_date}.xlsx"
+        output_filename = "手板报价单.xlsx"  # Simplified filename without date
         
         quote_file = generate_quote_excel(processed_data, output_filename)
         
