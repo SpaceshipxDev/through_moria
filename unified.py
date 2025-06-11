@@ -285,63 +285,86 @@ def generate_quote_excel(processed_data, output_filename):
     DARK_GRAY = "343A40"       # Dark text
     SUCCESS_GREEN = "28A745"   # For totals
     
-    current_date = datetime.now().strftime("%B %d, %Y")
+    current_date = datetime.now().strftime("%Y年%m月%d日")
 
     # Set default font for the entire sheet
     ws.sheet_properties.defaultRowHeight = 18
     
     # Modern header section with clean spacing
     ws.merge_cells('A1:H1')
-    ws['A1'] = "QUOTATION"
-    ws['A1'].font = Font(name='Calibri', size=28, bold=True, color=DARK_GRAY)
-    ws['A1'].alignment = Alignment(horizontal='left', vertical='center')
+    ws['A1'] = "手板报价单"
+    ws['A1'].font = Font(name='Microsoft YaHei', size=28, bold=True, color=DARK_GRAY)
+    ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
     ws.row_dimensions[1].height = 45
     
     # Quote number and date - modern layout
     ws.merge_cells('A3:D3')
-    ws['A3'] = f"Quote #QT-{datetime.now().strftime('%Y%m%d')}"
-    ws['A3'].font = Font(name='Calibri', size=12, color=MEDIUM_GRAY)
+    ws['A3'] = f"报价单号: QT-{datetime.now().strftime('%Y%m%d')}"
+    ws['A3'].font = Font(name='Microsoft YaHei', size=12, color=MEDIUM_GRAY)
     ws['A3'].alignment = Alignment(horizontal='left', vertical='center')
     
     ws.merge_cells('E3:H3')
-    ws['E3'] = f"Date: {current_date}"
-    ws['E3'].font = Font(name='Calibri', size=12, color=MEDIUM_GRAY)
+    ws['E3'] = f"日期: {current_date}"
+    ws['E3'].font = Font(name='Microsoft YaHei', size=12, color=MEDIUM_GRAY)
     ws['E3'].alignment = Alignment(horizontal='right', vertical='center')
     
-    # Company section with modern card-like design
+    # Party A (Customer) section - fillable
     ws.merge_cells('A5:H5')
-    ws['A5'] = "FROM"
-    ws['A5'].font = Font(name='Calibri', size=10, bold=True, color=MEDIUM_GRAY)
+    ws['A5'] = "甲方信息 (客户信息)"
+    ws['A5'].font = Font(name='Microsoft YaHei', size=12, bold=True, color=DARK_GRAY)
     ws['A5'].alignment = Alignment(horizontal='left', vertical='center')
+    ws.row_dimensions[5].height = 25
+    
+    # Fillable customer fields
+    customer_fields = [
+        "甲方公司: ___________________________",
+        "联系人: ___________________________", 
+        "电话: ___________________________",
+        "邮箱: ___________________________"
+    ]
+    
+    for i, field in enumerate(customer_fields, start=6):
+        ws.merge_cells(f'A{i}:H{i}')
+        ws[f'A{i}'] = field
+        ws[f'A{i}'].font = Font(name='Microsoft YaHei', size=11, color=DARK_GRAY)
+        ws[f'A{i}'].alignment = Alignment(horizontal='left', vertical='center')
+        ws.row_dimensions[i].height = 22
+    
+    # Party B (Our company) section
+    ws.merge_cells('A11:H11')
+    ws['A11'] = "乙方信息 (供应商信息)"
+    ws['A11'].font = Font(name='Microsoft YaHei', size=12, bold=True, color=DARK_GRAY)
+    ws['A11'].alignment = Alignment(horizontal='left', vertical='center')
+    ws.row_dimensions[11].height = 25
     
     # Company details in a clean layout
     company_info = [
-        "Hangzhou Yueyi Model Technology Co., Ltd.",
-        "Contact: Fu Shiqin",
-        "Phone: +86 137 7747 9066",
-        "Address: No.11, Road 1, Dongzhou Industrial Zone, Fuyang District, Hangzhou"
+        "乙方公司: 杭州越依模型科技有限公司",
+        "联系人: 傅士勤",
+        "电话: 137 7747 9066", 
+        "地址: 杭州市富阳区东洲工业功能区1号路11号"
     ]
     
-    for i, info in enumerate(company_info, start=6):
+    for i, info in enumerate(company_info, start=12):
         ws.merge_cells(f'A{i}:H{i}')
         ws[f'A{i}'] = info
-        ws[f'A{i}'].font = Font(name='Calibri', size=11, color=DARK_GRAY)
+        ws[f'A{i}'].font = Font(name='Microsoft YaHei', size=11, color=DARK_GRAY)
         ws[f'A{i}'].alignment = Alignment(horizontal='left', vertical='center')
         ws.row_dimensions[i].height = 20
 
     # Add some breathing room
-    ws.row_dimensions[10].height = 25
+    ws.row_dimensions[16].height = 25
     
     # Modern table headers with clean design
-    table_headers = ["#", "Image", "Part Name", "Surface", "Material", "Qty", "Unit Price", "Total"]
-    header_widths = [5, 12, 20, 12, 15, 8, 15, 15]
+    table_headers = ["序号", "零件图片", "零件名称", "表面处理", "材质", "数量", "单价(未税)", "总价(未税)"]
+    header_widths = [6, 12, 20, 12, 15, 8, 15, 15]
     
     # Create header row with modern styling
-    header_row = 11
+    header_row = 17
     for col_num, (header, width) in enumerate(zip(table_headers, header_widths), 1):
         cell = ws.cell(row=header_row, column=col_num)
         cell.value = header
-        cell.font = Font(name='Calibri', size=11, bold=True, color="FFFFFF")
+        cell.font = Font(name='Microsoft YaHei', size=11, bold=True, color="FFFFFF")
         cell.fill = PatternFill(start_color=BRAND_BLUE, end_color=BRAND_BLUE, fill_type="solid")
         cell.alignment = Alignment(horizontal="center", vertical="center")
         # No borders for cleaner look
@@ -352,7 +375,7 @@ def generate_quote_excel(processed_data, output_filename):
     ws.row_dimensions[header_row].height = 35
 
     # Add data rows with alternating background and clean styling
-    data_start_row = 12
+    data_start_row = 18
     
     for idx, row_data in enumerate(processed_data):
         current_row = data_start_row + idx
@@ -403,19 +426,19 @@ def generate_quote_excel(processed_data, output_filename):
             # Special handling for total price column
             if col_num == 8:  # Total price column
                 cell.value = f"=F{current_row}*G{current_row}"
-                cell.font = Font(name='Calibri', size=11, bold=True, color=DARK_GRAY)
+                cell.font = Font(name='Microsoft YaHei', size=11, bold=True, color=DARK_GRAY)
                 cell.number_format = '"¥"#,##0.00'  # Currency formatting
             elif col_num == 7:  # Unit price column
                 cell.value = value
-                cell.font = Font(name='Calibri', size=11, color=DARK_GRAY)
+                cell.font = Font(name='Microsoft YaHei', size=11, color=DARK_GRAY)
                 cell.number_format = '"¥"#,##0.00'  # Currency formatting
             elif col_num == 6:  # Quantity column
                 cell.value = value
-                cell.font = Font(name='Calibri', size=11, color=DARK_GRAY)
+                cell.font = Font(name='Microsoft YaHei', size=11, color=DARK_GRAY)
                 cell.number_format = '#,##0'  # Number formatting
             else:
                 cell.value = value
-                cell.font = Font(name='Calibri', size=11, color=DARK_GRAY)
+                cell.font = Font(name='Microsoft YaHei', size=11, color=DARK_GRAY)
             
             # Modern alignment - no borders for cleaner look
             if col_num in [1, 2, 6, 7, 8]:  # Center align numbers and images
@@ -449,14 +472,14 @@ def generate_quote_excel(processed_data, output_filename):
     
     # Subtotal row
     ws.merge_cells(f'A{total_row}:G{total_row}')
-    ws[f'A{total_row}'] = "SUBTOTAL"
-    ws[f'A{total_row}'].font = Font(name='Calibri', size=12, bold=True, color=DARK_GRAY)
+    ws[f'A{total_row}'] = "小计"
+    ws[f'A{total_row}'].font = Font(name='Microsoft YaHei', size=12, bold=True, color=DARK_GRAY)
     ws[f'A{total_row}'].alignment = Alignment(horizontal="right", vertical="center")
     
     first_data_row = data_start_row
     last_data_row = len(processed_data) + data_start_row - 1
     ws[f'H{total_row}'] = f"=SUM(H{first_data_row}:H{last_data_row})"
-    ws[f'H{total_row}'].font = Font(name='Calibri', size=12, bold=True, color=SUCCESS_GREEN)
+    ws[f'H{total_row}'].font = Font(name='Microsoft YaHei', size=12, bold=True, color=SUCCESS_GREEN)
     ws[f'H{total_row}'].alignment = Alignment(horizontal="center", vertical="center")
     ws[f'H{total_row}'].number_format = '"¥"#,##0.00'
     ws[f'H{total_row}'].fill = PatternFill(start_color=LIGHT_GRAY, end_color=LIGHT_GRAY, fill_type="solid")
@@ -466,45 +489,45 @@ def generate_quote_excel(processed_data, output_filename):
     
     # Terms header
     ws.merge_cells(f'A{terms_start}:H{terms_start}')
-    ws[f'A{terms_start}'] = "TERMS & CONDITIONS"
-    ws[f'A{terms_start}'].font = Font(name='Calibri', size=12, bold=True, color=DARK_GRAY)
+    ws[f'A{terms_start}'] = "条款说明"
+    ws[f'A{terms_start}'].font = Font(name='Microsoft YaHei', size=12, bold=True, color=DARK_GRAY)
     ws[f'A{terms_start}'].alignment = Alignment(horizontal='left', vertical='center')
     ws.row_dimensions[terms_start].height = 25
     
     # Clean terms list
     terms = [
-        "• Payment Terms: Net 30 days",
-        "• Delivery: 7 days after confirmation",
-        "• Quality: According to 2D/3D drawings and specifications",
-        "• This quote is valid for Hangzhou Hikvision and affiliated companies",
-        "• Prices are subject to change without notice",
-        "• All prices are in Chinese Yuan (¥)"
+        "• 付款方式: 月结30天",
+        "• 交货期: 确认后7个工作日内完成",
+        "• 验收标准: 依据甲方2D、3D图纸及说明文档进行验收",
+        "• 本报价单适用于杭州海康威视科技有限公司及其子公司、关联公司",
+        "• 报价有效期: 30天",
+        "• 所有价格均为人民币不含税价格"
     ]
     
     for i, term in enumerate(terms, start=terms_start + 1):
         ws.merge_cells(f'A{i}:H{i}')
         ws[f'A{i}'] = term
-        ws[f'A{i}'].font = Font(name='Calibri', size=10, color=MEDIUM_GRAY)
+        ws[f'A{i}'].font = Font(name='Microsoft YaHei', size=10, color=MEDIUM_GRAY)
         ws[f'A{i}'].alignment = Alignment(horizontal='left', vertical='center')
         ws.row_dimensions[i].height = 20
 
     # Modern signature section
     signature_row = terms_start + len(terms) + 3
     ws.merge_cells(f'F{signature_row}:H{signature_row}')
-    ws[f'F{signature_row}'] = "Authorized Signature"
-    ws[f'F{signature_row}'].font = Font(name='Calibri', size=11, bold=True, color=DARK_GRAY)
+    ws[f'F{signature_row}'] = "乙方签名确认"
+    ws[f'F{signature_row}'].font = Font(name='Microsoft YaHei', size=11, bold=True, color=DARK_GRAY)
     ws[f'F{signature_row}'].alignment = Alignment(horizontal='center', vertical='center')
     ws.row_dimensions[signature_row].height = 25
     
     # Add signature line
     ws.merge_cells(f'F{signature_row + 2}:H{signature_row + 2}')
     ws[f'F{signature_row + 2}'] = "________________________"
-    ws[f'F{signature_row + 2}'].font = Font(name='Calibri', size=10, color=MEDIUM_GRAY)
+    ws[f'F{signature_row + 2}'].font = Font(name='Microsoft YaHei', size=10, color=MEDIUM_GRAY)
     ws[f'F{signature_row + 2}'].alignment = Alignment(horizontal='center', vertical='center')
     
     ws.merge_cells(f'F{signature_row + 3}:H{signature_row + 3}')
-    ws[f'F{signature_row + 3}'] = current_date
-    ws[f'F{signature_row + 3}'].font = Font(name='Calibri', size=10, color=MEDIUM_GRAY)
+    ws[f'F{signature_row + 3}'] = datetime.now().strftime("%Y年%m月%d日")
+    ws[f'F{signature_row + 3}'].font = Font(name='Microsoft YaHei', size=10, color=MEDIUM_GRAY)
     ws[f'F{signature_row + 3}'].alignment = Alignment(horizontal='center', vertical='center')
 
     # Remove gridlines for cleaner look
@@ -520,8 +543,8 @@ def generate_quote_excel(processed_data, output_filename):
     wb.save(output_filename)
     print(f"✅ Modern quote Excel generated: {output_filename}")
     return output_filename
-
     
+
 def main():
     """Main pipeline function"""
     
